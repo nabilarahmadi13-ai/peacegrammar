@@ -1,22 +1,22 @@
 {
   "name": "GRAMMAR PEACE",
-  "short_name": "PEACE Grammar",
+  "short_name": "GrammarPeace",
   "description": "Interactive English Grammar Lab",
-  "start_url": "index.html",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4f46e5",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "round_logo.png",
-      "sizes": "192x192",
+      "src": "/round_logo.png",
+      "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "logo.png",
-      "sizes": "512x512",
+      "src": "/logo.png",
+      "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     }

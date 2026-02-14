@@ -1,18 +1,13 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Performance Report</title>
-
+<title>Performance Report | PEACE</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
 
 <style>
-
 /* ===== PAGE BACKGROUND ===== */
-
 body{
     margin:0;
     font-family:'Poppins', sans-serif;
@@ -21,7 +16,6 @@ body{
 }
 
 /* ===== RESULT CARD ===== */
-
 .result-container{
     position:relative;
     max-width:700px;
@@ -31,15 +25,12 @@ body{
     border-radius:14px;
     box-shadow:0 12px 35px rgba(0,0,0,0.08);
     overflow:hidden;
-
-    /* Reveal Animation */
     opacity:0;
     transform:translateY(40px);
     animation:fadeReveal 1s ease forwards;
 }
 
-/* ===== WATERMARK ===== */
-
+/* ===== WATERMARK (Logo di Tengah Transparan) ===== */
 .result-container::before{
     content:"";
     position:absolute;
@@ -47,43 +38,45 @@ body{
     left:50%;
     width:350px;
     height:350px;
-    background:url("round logo.png") no-repeat center;
+    /* PERBAIKAN: Nama file disesuaikan tanpa spasi */
+    background:url("round_logo.png") no-repeat center;
     background-size:contain;
-    opacity:0.04;
+    opacity:0.05;
     transform:translate(-50%, -50%);
     pointer-events:none;
 }
 
-/* ===== ANIMATION ===== */
-
 @keyframes fadeReveal{
-    to{
-        opacity:1;
-        transform:translateY(0);
-    }
+    to{ opacity:1; transform:translateY(0); }
 }
 
 /* ===== HEADER ===== */
-
 .academy-header{
     text-align:center;
     margin-bottom:40px;
 }
 
+/* Tambahan Style untuk Logo Atas */
+.logo-top {
+    width: 150px;
+    height: auto;
+    margin-bottom: 15px;
+}
+
 .academy-header h1{
     font-family:'Playfair Display', serif;
     font-size:28px;
-    margin-bottom:5px;
+    margin:0;
 }
 
 .academy-header p{
     color:#c9a227;
     font-weight:500;
     letter-spacing:1px;
+    margin-top: 5px;
 }
 
 /* ===== STUDENT INFO ===== */
-
 .student-info{
     text-align:center;
     margin-bottom:40px;
@@ -92,18 +85,15 @@ body{
 }
 
 /* ===== SCORE SHOWCASE ===== */
-
 .score-showcase{
     text-align:center;
     margin-bottom:40px;
 }
-
 .score-showcase h2{
     font-size:70px;
     margin:0;
     color:#c9a227;
 }
-
 .score-showcase h3{
     margin-top:10px;
     letter-spacing:3px;
@@ -111,7 +101,6 @@ body{
 }
 
 /* ===== FEEDBACK ===== */
-
 .feedback-box{
     background:#fafafa;
     padding:25px;
@@ -120,13 +109,7 @@ body{
     margin-bottom:35px;
 }
 
-.feedback-box h4{
-    margin-top:0;
-    margin-bottom:10px;
-}
-
 /* ===== SUMMARY ===== */
-
 .summary-panel{
     text-align:center;
     margin-bottom:40px;
@@ -135,13 +118,11 @@ body{
 }
 
 /* ===== BUTTONS ===== */
-
 .result-actions{
     display:flex;
     justify-content:center;
     gap:20px;
 }
-
 .result-actions button{
     padding:13px 26px;
     border:none;
@@ -150,122 +131,72 @@ body{
     font-weight:500;
     transition:0.3s;
 }
-
-.btn-primary{
-    background:#f80000;
-    color:white;
-}
-
-.btn-primary:hover{
-    background:#b38f1f;
-}
-
-.btn-secondary{
-    background:#040cff69;
-}
-
-.btn-secondary:hover{
-    background:#ddd;
-}
-
-/* ===== MOBILE ===== */
+.btn-primary{ background:#f80000; color:white; }
+.btn-primary:hover{ background:#b38f1f; }
+.btn-secondary{ background:#040cff69; }
 
 @media(max-width:600px){
-
-.result-container{
-    margin:30px 15px;
-    padding:35px 25px;
+    .result-container{ margin:30px 15px; padding:35px 25px; }
+    .score-showcase h2{ font-size:52px; }
 }
-
-.score-showcase h2{
-    font-size:52px;
-}
-
-}
-
 </style>
-
 </head>
 
 <body>
 
 <section class="result-container">
+    <header class="academy-header">
+        <!-- MENAMPILKAN LOGO DI ATAS -->
+        <img src="logo.png" alt="PEACE Logo" class="logo-top">
+        <h1>PEACE ENGLISH ACADEMY</h1>
+        <p>Grammar Performance Report</p>
+    </header>
 
-<header class="academy-header">
-<h1>PEACE ENGLISH ACADEMY</h1>
-<p>Grammar Performance Report</p>
-</header>
+    <section class="student-info">
+        <p>Student: <span id="studentName"></span></p>
+        <p>Exercise: <span id="exerciseTitle"></span></p>
+        <p>Date: <span id="examDate"></span></p>
+    </section>
 
-<section class="student-info">
-<p>Student: <span id="studentName"></span></p>
-<p>Exercise: <span id="exerciseTitle"></span></p>
-<p>Date: <span id="examDate"></span></p>
-</section>
+    <section class="score-showcase">
+        <h2 id="scoreDisplay"></h2>
+        <h3 id="gradeDisplay"></h3>
+    </section>
 
-<section class="score-showcase">
-<h2 id="scoreDisplay"></h2>
-<h3 id="gradeDisplay"></h3>
-</section>
+    <section class="feedback-box">
+        <h4>Performance Evaluation</h4>
+        <p id="feedbackText"></p>
+    </section>
 
-<section class="feedback-box">
-<h4>Performance Evaluation</h4>
-<p id="feedbackText"></p>
-</section>
+    <section class="summary-panel">
+        <p>Correct Answers: <span id="correctDisplay"></span></p>
+        <p>Accuracy: <span id="accuracyDisplay"></span>%</p>
+    </section>
 
-<section class="summary-panel">
-<p>Correct Answers: <span id="correctDisplay"></span></p>
-<p>Accuracy: <span id="accuracyDisplay"></span>%</p>
-</section>
-
-<section class="result-actions">
-<button class="btn-primary" onclick="retake()">Retake Exercise</button>
-<button class="btn-secondary" onclick="dashboard()">Dashboard</button>
-</section>
-
+    <section class="result-actions">
+        <button class="btn-primary" onclick="retake()">Retake Exercise</button>
+        <button class="btn-secondary" onclick="dashboard()">Dashboard</button>
+    </section>
 </section>
 
 <script>
-
-/* ===== LOAD RESULT DATA ===== */
-
 window.onload = function(){
+    let score = localStorage.getItem("result_score");
+    let correct = localStorage.getItem("result_correct");
+    let total = localStorage.getItem("result_total");
 
-let score = localStorage.getItem("result_score");
-let correct = localStorage.getItem("result_correct");
-let total = localStorage.getItem("result_total");
-
-document.getElementById("studentName").innerText =
-localStorage.getItem("pea_user");
-
-document.getElementById("exerciseTitle").innerText =
-localStorage.getItem("result_topic");
-
-document.getElementById("examDate").innerText =
-new Date().toLocaleDateString();
-
-document.getElementById("scoreDisplay").innerText = score;
-document.getElementById("gradeDisplay").innerText =
-localStorage.getItem("result_grade");
-
-document.getElementById("feedbackText").innerText =
-localStorage.getItem("result_feedback");
-
-document.getElementById("correctDisplay").innerText = correct;
-
-document.getElementById("accuracyDisplay").innerText =
-Math.round((correct/total)*100);
-
+    document.getElementById("studentName").innerText = localStorage.getItem("pea_user") || "Student";
+    document.getElementById("exerciseTitle").innerText = localStorage.getItem("result_topic") || "Exercise";
+    document.getElementById("examDate").innerText = new Date().toLocaleDateString();
+    document.getElementById("scoreDisplay").innerText = score || "0";
+    document.getElementById("gradeDisplay").innerText = localStorage.getItem("result_grade") || "-";
+    document.getElementById("feedbackText").innerText = localStorage.getItem("result_feedback") || "No feedback available.";
+    document.getElementById("correctDisplay").innerText = correct || "0";
+    document.getElementById("accuracyDisplay").innerText = total > 0 ? Math.round((correct/total)*100) : 0;
 }
 
-/* ===== NAVIGATION ===== */
-
-function retake(){
-    window.history.back();
-}
-
-function dashboard(){
-    window.location.href="index.html";
-}
+function retake(){ window.history.back(); }
+function dashboard(){ window.location.href="index.html"; }
 </script>
 
 </body>

@@ -582,6 +582,19 @@
             <a href="#"><i class="fab fa-whatsapp"></i></a>
         </div>
     </footer>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("/service-worker.js")
+      .then(function (registration) {
+        console.log("Service Worker registered:", registration.scope);
+      })
+      .catch(function (error) {
+        console.log("Service Worker registration failed:", error);
+      });
+  });
+}
+</script>
 
     <!-- Script Utama (PASTIKAN app.js ada di folder yang sama) -->
     <script src="app.js"></script>
