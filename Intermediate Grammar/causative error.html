@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise - Grammar Peace</title>
+    <style>
+        :root {
+            --bg-color: #0a0e14;
+            --card-bg: #161b22;
+            --text-main: #c9d1d9;
+            --accent: #58a6ff;
+            --success: #2ea043;
+            --error: #da3633;
+            --border: #30363d;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .top-nav {
+            width: 100%;
+            max-width: 750px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .btn-back {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+        }
+
+        .btn-back:hover { background: #30363d; border-color: var(--accent); }
+
+        #quiz-wrapper {
+            background: var(--card-bg);
+            max-width: 750px;
+            width: 100%;
+            padding: 35px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .header h1 { font-size: 1.4rem; color: var(--accent); margin: 0; text-transform: uppercase; }
+        #timer { font-family: monospace; font-size: 1.2rem; color: #ffa657; }
+
+        .progress-container { height: 4px; background: #21262d; margin-bottom: 25px; }
+        #progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
+
+        .question-box { margin-bottom: 30px; }
+        .question-text { font-size: 1.2rem; margin-bottom: 20px; line-height: 1.5; }
+
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+
+        .opt-btn {
+            background: #21262d;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 15px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+
+        .opt-btn:hover:not(:disabled) { background: #30363d; border-color: #8b949e; }
+        .opt-btn.correct { background: var(--success) !important; color: white; }
+        .opt-btn.wrong { background: var(--error) !important; color: white; }
+
+        #feedback-panel {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 6px;
+            background: #0d1117;
+            border-left: 4px solid var(--accent);
+            display: none;
+        }
+
+        .feedback-exp { font-size: 0.95rem; color: #8b949e; margin-top: 8px; }
+
+        .btn-nav {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            float: right;
+            margin-top: 20px;
+            display: none;
+        }
+
+        #results { display: none; text-align: center; }
+        .score-circle { font-size: 3rem; color: var(--accent); margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+<div class="top-nav">
+    <button class="btn-back" onclick="window.location.href='../index.html'">
+        🏠 Back to Levels
+    </button>
+</div>
+
+<div id="quiz-wrapper">
+    <div id="main-quiz">
+        <div class="header">
+            <!-- EDIT DI SINI: JUDUL TOPIK -->
+            <h1 id="display-topic">TOPIC NAME</h1>
+            <div id="timer">05:00</div>
+        </div>
+
+        <div class="progress-container"><div id="progress-bar"></div></div>
+
+        <div class="question-box">
+            <div id="q-text" class="question-text"></div>
+            <div id="options" class="options-grid"></div>
+        </div>
+
+        <div id="feedback-panel">
+            <div id="feedback-status" style="font-weight:bold"></div>
+            <div id="feedback-desc" class="feedback-exp"></div>
+        </div>
+
+        <button id="next-btn" class="btn-nav" onclick="goNext()">NEXT QUESTION</button>
+    </div>
+
+    <div id="results">
+        <h1>EXAM COMPLETE</h1>
+        <div class="score-circle" id="final-score">0/0</div>
+        <p id="rank-msg" style="margin-bottom: 20px;"></p>
+        <p style="color: var(--accent); font-size: 0.9rem;">Redirecting to Performance Report...</p>
+    </div>
+</div>
+
+<script src="../app.js"></script>
+
+<script>
+    /* ============================================================
+       BAGIAN 1: KONFIGURASI SOAL (EDIT DI SINI)
+       ============================================================ */
+    
+    const TOPIC_TITLE = "Mastering Causative Verb"; // Ganti Judul
+    const TOPIC_KEY = "causative error"; // HARUS SAMA dengan nama di TOPICS app.js
+    const TIME_LIMIT = 300; // Dalam detik (300 = 5 menit)
+    const TOTAL_TO_SHOW = 20; // Jumlah soal yang ditampilkan (misal dari 20 soal, ambil 10 acak)
+
+    const pool = [
+    { 
+        q: "The boss made the employees to work overtime yesterday.",
+        o: ["made", "to work", "overtime", "yesterday"],
+        c: 1,
+        e: "Active Make Error. 'Make' aktif tidak boleh pakai 'to'. Should be: 'work'.",
+        t: "💡 Make + Person + V1 (NO TO).",
+        m: "⚠️ Menyamakan pola make dengan get/want."
+    },
+    { 
+        q: "She got her husband wash the car every Sunday.",
+        o: ["got", "wash", "car", "every Sunday"],
+        c: 1,
+        e: "Active Get Error. 'Get' aktif wajib pakai 'to'. Should be: 'to wash'.",
+        t: "💡 Get + Person + TO + V1.",
+        m: "⚠️ Lupa menambahkan 'to' pada pola Get."
+    },
+    { 
+        q: "I had the mechanic to check the brakes.",
+        o: ["had", "to check", "brakes", "No Error"],
+        c: 1,
+        e: "Active Have Error. 'Have' aktif tidak boleh pakai 'to'. Should be: 'check'.",
+        t: "💡 Have + Person + V1 (NO TO).",
+        m: "⚠️ Menambahkan 'to' pada pola Have."
+    },
+    { 
+        q: "He let his children to play in the park until late.",
+        o: ["let", "to play", "in the park", "until late"],
+        c: 1,
+        e: "Active Let Error. 'Let' tidak boleh pakai 'to'. Should be: 'play'.",
+        t: "💡 Let + Person + V1 (NO TO).",
+        m: "⚠️ Menambahkan 'to' setelah Let."
+    },
+    { 
+        q: "We need to get the room paint before the guests arrive.",
+        o: ["to get", "room", "paint", "arrive"],
+        c: 2,
+        e: "Passive Get Error. Objek 'room' (benda). Should be V3 'painted'.",
+        t: "💡 Get + Thing + V3.",
+        m: "⚠️ Menggunakan V1 pada objek benda mati."
+    },
+    { 
+        q: "The police made the thief confessed his crime.",
+        o: ["made", "thief", "confessed", "crime"],
+        c: 2,
+        e: "Active Make Error. Setelah objek harus V1 murni, bukan V2/V3. Should be: 'confess'.",
+        t: "💡 Make + Person + V1 (Base Form).",
+        m: "⚠️ Menggunakan Past Tense (V2) setelah objek."
+    },
+    { 
+        q: "She helped me doing my homework.",
+        o: ["helped", "me", "doing", "homework"],
+        c: 2,
+        e: "Help Error. Help diikuti V1 atau To V1, bukan Gerund (V-ing). Should be: 'do' or 'to do'.",
+        t: "💡 Help + Person + V1/To V1.",
+        m: "⚠️ Menggunakan V-ing setelah Help."
+    },
+    { 
+        q: "I will have the letter type by my secretary.",
+        o: ["will have", "letter", "type", "by my secretary"],
+        c: 2,
+        e: "Passive Have Error. Objek 'letter' (benda). Should be V3 'typed'.",
+        t: "💡 Have + Thing + V3.",
+        m: "⚠️ Menggunakan V1 pada causative passive."
+    },
+    { 
+        q: "The teacher got the students study harder for the exam.",
+        o: ["got", "students", "study", "harder"],
+        c: 2,
+        e: "Active Get Error. Kurang 'to'. Should be: 'to study'.",
+        t: "💡 Get + Person + TO + V1.",
+        m: "⚠️ Hilang 'to' pada pola Get."
+    },
+    { 
+        q: "They were made pay a fine for speeding.",
+        o: ["were made", "pay", "fine", "speeding"],
+        c: 1,
+        e: "Passive Make Error. Passive form (be made) wajib pakai 'to'. Should be: 'to pay'.",
+        t: "💡 Active: Make + V1. Passive: Be Made + TO + V1.",
+        m: "⚠️ Lupa 'to' pada bentuk pasif make."
+    },
+    { 
+        q: "Please let me to know if you need help.",
+        o: ["let", "me", "to know", "need help"],
+        c: 2,
+        e: "Let Error. Jangan pakai 'to'. Should be: 'know'.",
+        t: "💡 Let + Person + V1.",
+        m: "⚠️ Frasa umum 'Let me know' sering salah ditambahkan 'to'."
+    },
+    { 
+        q: "I had the gardener planted some flowers.",
+        o: ["had", "gardener", "planted", "flowers"],
+        c: 2,
+        e: "Active Have Error. Harus V1 murni. Should be: 'plant'.",
+        t: "💡 Have + Person + V1.",
+        m: "⚠️ Menggunakan V2/V3 setelah person."
+    },
+    { 
+        q: "We got the computer fixing yesterday.",
+        o: ["got", "computer", "fixing", "yesterday"],
+        c: 2,
+        e: "Passive Get Error. Objek 'computer'. Harus V3. Should be: 'fixed'.",
+        t: "💡 Get + Thing + V3.",
+        m: "⚠️ Menggunakan V-ing."
+    },
+    { 
+        q: "The sad news made her to cry all night.",
+        o: ["made", "her", "to cry", "all night"],
+        c: 2,
+        e: "Make Error. Jangan pakai 'to'. Should be: 'cry'.",
+        t: "💡 Make + Person + V1.",
+        m: "⚠️ Menambahkan 'to' pada causative make."
+    },
+    { 
+        q: "Can you help me finding my keys?",
+        o: ["Can", "help", "me", "finding"],
+        c: 3,
+        e: "Help Error. Jangan pakai V-ing. Should be: 'find' or 'to find'.",
+        t: "💡 Help + Person + V1.",
+        m: "⚠️ Menggunakan Gerund."
+    },
+    { 
+        q: "I'll have the package delivering to your house.",
+        o: ["have", "package", "delivering", "to your house"],
+        c: 2,
+        e: "Passive Have Error. Objek 'package'. Harus V3. Should be: 'delivered'.",
+        t: "💡 Have + Thing + V3.",
+        m: "⚠️ Menggunakan V-ing."
+    },
+    { 
+        q: "The manager got the staff work late.",
+        o: ["manager", "got", "work", "late"],
+        c: 2,
+        e: "Active Get Error. Kurang 'to'. Should be: 'to work'.",
+        t: "💡 Get + Person + TO V1.",
+        m: "⚠️ Lupa preposition 'to'."
+    },
+    { 
+        q: "The rain made us to cancel the picnic.",
+        o: ["made", "us", "to cancel", "picnic"],
+        c: 2,
+        e: "Make Error. Hapus 'to'. Should be: 'cancel'.",
+        t: "💡 Make + Person + V1.",
+        m: "⚠️ Menambahkan 'to'."
+    },
+    { 
+        q: "She had her nails polishing at the salon.",
+        o: ["had", "nails", "polishing", "salon"],
+        c: 2,
+        e: "Passive Have Error. Objek 'nails'. Harus V3. Should be: 'polished'.",
+        t: "💡 Have + Thing + V3.",
+        m: "⚠️ Menggunakan V-ing."
+    },
+    { 
+        q: "Don't let the children played with fire.",
+        o: ["let", "children", "played", "with fire"],
+        c: 2,
+        e: "Let Error. Harus V1 murni. Should be: 'play'.",
+        t: "💡 Let + Person + V1.",
+        m: "⚠️ Menggunakan V2/V3."
+    }
+];
+    /* ============================================================
+       BAGIAN 2: LOGIKA SISTEM (JANGAN DIEDIT KECUALI PAHAM)
+       ============================================================ */
+    
+    let currentQuestions = [];
+    let currentIdx = 0;
+    let score = 0;
+    let timer;
+    let timeLeft = TIME_LIMIT;
+    let answered = false;
+
+    function init() {
+        document.getElementById('display-topic').innerText = TOPIC_TITLE;
+        // Acak soal dan ambil sebanyak TOTAL_TO_SHOW
+        currentQuestions = pool.sort(() => 0.5 - Math.random()).slice(0, TOTAL_TO_SHOW);
+        startTimer();
+        showQuestion();
+    }
+
+    function startTimer() {
+        timer = setInterval(() => {
+            timeLeft--;
+            let m = Math.floor(timeLeft/60);
+            let s = timeLeft % 60;
+            document.getElementById('timer').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+            if(timeLeft <= 0) finish();
+        }, 1000);
+    }
+
+    function showQuestion() {
+        answered = false;
+        document.getElementById('next-btn').style.display = 'none';
+        document.getElementById('feedback-panel').style.display = 'none';
+        const q = currentQuestions[currentIdx];
+        
+        document.getElementById('progress-bar').style.width = (currentIdx / TOTAL_TO_SHOW * 100) + "%";
+        document.getElementById('q-text').innerText = `${currentIdx + 1}. ${q.q}`;
+        
+        const opts = document.getElementById('options');
+        opts.innerHTML = '';
+        q.o.forEach((o, i) => {
+            const b = document.createElement('button');
+            b.className = 'opt-btn';
+            b.innerText = o;
+            b.onclick = () => check(i, b);
+            opts.appendChild(b);
+        });
+    }
+
+    function check(idx, btn) {
+        if(answered) return;
+        answered = true;
+        const q = currentQuestions[currentIdx];
+        const all = document.querySelectorAll('.opt-btn');
+
+        if(idx === q.c) {
+            score++;
+            btn.classList.add('correct');
+            showFeedback("CORRECT", q.e);
+        } else {
+            btn.classList.add('wrong');
+            all[q.c].classList.add('correct');
+            showFeedback("INCORRECT", q.e);
+        }
+        document.getElementById('next-btn').style.display = 'block';
+    }
+
+    function showFeedback(status, text) {
+        const p = document.getElementById('feedback-panel');
+        document.getElementById('feedback-status').innerText = status;
+        document.getElementById('feedback-status').style.color = (status === "CORRECT") ? "var(--success)" : "var(--error)";
+        document.getElementById('feedback-desc').innerText = text;
+        p.style.display = 'block';
+    }
+
+    function goNext() {
+        currentIdx++;
+        if(currentIdx < TOTAL_TO_SHOW) showQuestion();
+        else finish();
+    }
+
+    function finish() {
+        clearInterval(timer);
+        document.getElementById('main-quiz').style.display = 'none';
+        document.getElementById('results').style.display = 'block';
+        document.getElementById('final-score').innerText = `${score}/${TOTAL_TO_SHOW}`;
+        
+        let msg = "";
+        let grade = "";
+        let percent = Math.round((score / TOTAL_TO_SHOW) * 100);
+
+        if(percent >= 85) { msg = "Excellent Work! Mastery Achieved."; grade = "A"; }
+        else if(percent >= 70) { msg = "Good Job! A bit more practice and you'll be perfect."; grade = "B"; }
+        else { msg = "Keep Practicing. Review the explanations to improve."; grade = "C"; }
+        
+        document.getElementById('rank-msg').innerText = msg;
+
+        setTimeout(() => {
+            if (typeof finishQuiz === "function") {
+                finishQuiz(percent, score, TOTAL_TO_SHOW, grade, msg, TOPIC_KEY);
+            }
+        }, 3000); 
+    }
+
+    init();
+</script>
+</body>
+</html>

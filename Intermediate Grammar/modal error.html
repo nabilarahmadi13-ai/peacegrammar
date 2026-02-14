@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise - Grammar Peace</title>
+    <style>
+        :root {
+            --bg-color: #0a0e14;
+            --card-bg: #161b22;
+            --text-main: #c9d1d9;
+            --accent: #58a6ff;
+            --success: #2ea043;
+            --error: #da3633;
+            --border: #30363d;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .top-nav {
+            width: 100%;
+            max-width: 750px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .btn-back {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+        }
+
+        .btn-back:hover { background: #30363d; border-color: var(--accent); }
+
+        #quiz-wrapper {
+            background: var(--card-bg);
+            max-width: 750px;
+            width: 100%;
+            padding: 35px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .header h1 { font-size: 1.4rem; color: var(--accent); margin: 0; text-transform: uppercase; }
+        #timer { font-family: monospace; font-size: 1.2rem; color: #ffa657; }
+
+        .progress-container { height: 4px; background: #21262d; margin-bottom: 25px; }
+        #progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
+
+        .question-box { margin-bottom: 30px; }
+        .question-text { font-size: 1.2rem; margin-bottom: 20px; line-height: 1.5; }
+
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+
+        .opt-btn {
+            background: #21262d;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 15px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+
+        .opt-btn:hover:not(:disabled) { background: #30363d; border-color: #8b949e; }
+        .opt-btn.correct { background: var(--success) !important; color: white; }
+        .opt-btn.wrong { background: var(--error) !important; color: white; }
+
+        #feedback-panel {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 6px;
+            background: #0d1117;
+            border-left: 4px solid var(--accent);
+            display: none;
+        }
+
+        .feedback-exp { font-size: 0.95rem; color: #8b949e; margin-top: 8px; }
+
+        .btn-nav {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            float: right;
+            margin-top: 20px;
+            display: none;
+        }
+
+        #results { display: none; text-align: center; }
+        .score-circle { font-size: 3rem; color: var(--accent); margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+<div class="top-nav">
+    <button class="btn-back" onclick="window.location.href='../index.html'">
+        🏠 Back to Levels
+    </button>
+</div>
+
+<div id="quiz-wrapper">
+    <div id="main-quiz">
+        <div class="header">
+            <!-- EDIT DI SINI: JUDUL TOPIK -->
+            <h1 id="display-topic">TOPIC NAME</h1>
+            <div id="timer">05:00</div>
+        </div>
+
+        <div class="progress-container"><div id="progress-bar"></div></div>
+
+        <div class="question-box">
+            <div id="q-text" class="question-text"></div>
+            <div id="options" class="options-grid"></div>
+        </div>
+
+        <div id="feedback-panel">
+            <div id="feedback-status" style="font-weight:bold"></div>
+            <div id="feedback-desc" class="feedback-exp"></div>
+        </div>
+
+        <button id="next-btn" class="btn-nav" onclick="goNext()">NEXT QUESTION</button>
+    </div>
+
+    <div id="results">
+        <h1>EXAM COMPLETE</h1>
+        <div class="score-circle" id="final-score">0/0</div>
+        <p id="rank-msg" style="margin-bottom: 20px;"></p>
+        <p style="color: var(--accent); font-size: 0.9rem;">Redirecting to Performance Report...</p>
+    </div>
+</div>
+
+<script src="../app.js"></script>
+
+<script>
+    /* ============================================================
+       BAGIAN 1: KONFIGURASI SOAL (EDIT DI SINI)
+       ============================================================ */
+    
+    const TOPIC_TITLE = "Mastering Modal"; // Ganti Judul
+    const TOPIC_KEY = "modal error"; // HARUS SAMA dengan nama di TOPICS app.js
+    const TIME_LIMIT = 300; // Dalam detik (300 = 5 menit)
+    const TOTAL_TO_SHOW = 20; // Jumlah soal yang ditampilkan (misal dari 20 soal, ambil 10 acak)
+
+    const pool = [
+    { 
+        q: "She can speaks three languages fluently.",
+        o: ["can", "speaks", "three", "fluently"],
+        c: 1,
+        e: "Modal Rule Error. Setelah modal, verb tidak boleh ditambah s/es. Should be: 'speak'.",
+        t: "💡 Modal + V1 (Base Form).",
+        m: "⚠️ Mengkonjugasikan verb setelah modal."
+    },
+    { 
+        q: "You should to study harder for the exam.",
+        o: ["should", "to study", "harder", "exam"],
+        c: 1,
+        e: "Modal Form Error. 'Should' tidak boleh diikuti 'to'. Should be: 'study'.",
+        t: "💡 Modal + V1 (NO TO).",
+        m: "⚠️ Menyamakan should dengan ought to/have to."
+    },
+    { 
+        q: "They must have saw the accident yesterday.",
+        o: ["must", "have", "saw", "yesterday"],
+        c: 2,
+        e: "Perfect Modal Error. Setelah 'Must have', wajib V3. 'Saw' adalah V2. Should be: 'seen'.",
+        t: "💡 Modal + Have + V3 (Past Participle).",
+        m: "⚠️ Menggunakan V2 setelah have."
+    },
+    { 
+        q: "Yesterday, I must go to the bank.",
+        o: ["Yesterday", "must", "go", "bank"],
+        c: 1,
+        e: "Past Tense Error. 'Must' tidak bisa dipakai untuk waktu lampau (yesterday). Should be: 'had to'.",
+        t: "💡 Past of Must = Had to.",
+        m: "⚠️ Menggunakan must untuk past events."
+    },
+    { 
+        q: "We had better to leave now or we will be late.",
+        o: ["had better", "to leave", "will be", "late"],
+        c: 1,
+        e: "Had Better Error. 'Had better' tidak boleh diikuti 'to'. Should be: 'leave'.",
+        t: "💡 Had better + V1 (NO TO).",
+        m: "⚠️ Menganggap 'had' butuh 'to' atau past participle."
+    },
+    { 
+        q: "He could have helping you if you had asked.",
+        o: ["could", "have", "helping", "asked"],
+        c: 2,
+        e: "Perfect Modal Error. Setelah 'could have', wajib V3. Should be: 'helped'.",
+        t: "💡 Could + Have + V3.",
+        m: "⚠️ Menggunakan V-ing setelah have."
+    },
+    { 
+        q: "You ought listen to your parents' advice.",
+        o: ["ought", "listen", "advice", "No Error"],
+        c: 1,
+        e: "Ought To Error. 'Ought' wajib pakai 'to'. Should be: 'ought to listen'.",
+        t: "💡 Ought + TO + V1.",
+        m: "⚠️ Menghilangkan 'to' pada ought."
+    },
+    { 
+        q: "She will can come to the party.",
+        o: ["will", "can", "come", "party"],
+        c: 1,
+        e: "Double Modal Error. Dua modal tidak boleh berjejer. Gunakan 'be able to'. Should be: 'will be able to'.",
+        t: "💡 Cannot use two modals together.",
+        m: "⚠️ Menerjemahkan 'akan bisa' secara literal."
+    },
+    { 
+        q: "I would rather staying home tonight.",
+        o: ["would rather", "staying", "home", "tonight"],
+        c: 1,
+        e: "Would Rather Error. Harus diikuti V1 murni. Should be: 'stay'.",
+        t: "💡 Would rather + V1.",
+        m: "⚠️ Menggunakan V-ing setelah would rather."
+    },
+    { 
+        q: "He must has forgotten his wallet.",
+        o: ["must", "has", "forgotten", "wallet"],
+        c: 1,
+        e: "Modal Auxiliary Error. Setelah modal, auxiliary 'have' tidak boleh berubah jadi 'has'. Should be: 'have'.",
+        t: "💡 Modal + HAVE (Always Base Form) + V3.",
+        m: "⚠️ Mengubah 'have' menjadi 'has' karena subjek 'He'."
+    },
+    { 
+        q: "You don't must smoke in this area.",
+        o: ["don't", "must", "smoke", "area"],
+        c: 1,
+        e: "Negative Form Error. Negatif dari must adalah 'must not', bukan 'don't must'. Or 'don't have to'. Context prohibition: 'must not'.",
+        t: "💡 Must not (prohibition). Don't have to (no obligation).",
+        m: "⚠️ Menggunakan 'do/don't' untuk memodifikasi modal murni."
+    },
+    { 
+        q: "May I to ask you a question?",
+        o: ["May", "to ask", "question", "No Error"],
+        c: 1,
+        e: "Modal Form Error. 'May' tidak boleh diikuti 'to'. Should be: 'ask'.",
+        t: "💡 May + S + V1?",
+        m: "⚠️ Menambahkan 'to'."
+    },
+    { 
+        q: "They should have went home earlier.",
+        o: ["should", "have", "went", "earlier"],
+        c: 2,
+        e: "V3 Error. V3 dari 'go' adalah 'gone', bukan 'went'. Should be: 'gone'.",
+        t: "💡 Modal + Have + V3.",
+        m: "⚠️ Menggunakan V2 sebagai V3."
+    },
+    { 
+        q: "We used to swimming in that river.",
+        o: ["used to", "swimming", "in", "river"],
+        c: 1,
+        e: "Used To Error. Untuk kebiasaan masa lalu, 'used to' + V1. Should be: 'swim'.",
+        t: "💡 Used to + V1.",
+        m: "⚠️ Tertukar dengan 'be used to V-ing'."
+    },
+    { 
+        q: "He might be sleep right now.",
+        o: ["might", "be", "sleep", "right now"],
+        c: 2,
+        e: "Continuous Error. Setelah 'be', gunakan V-ing untuk sedang berlangsung. Should be: 'sleeping'.",
+        t: "💡 Modal + Be + V-ing.",
+        m: "⚠️ Menggunakan V1 setelah be."
+    },
+    { 
+        q: "You better clean your room.",
+        o: ["You", "better", "clean", "room"],
+        c: 1,
+        e: "Incomplete Form. Harus ada 'had'. Should be: 'You had better'. (In informal speech 'had' is dropped, but in TOEFL it's an error).",
+        t: "💡 Full form: Had better.",
+        m: "⚠️ Menghilangkan 'had'."
+    },
+    { 
+        q: "She must of missed the bus.",
+        o: ["must", "of", "missed", "bus"],
+        c: 1,
+        e: "Spelling/Grammar Error. 'Must have' terdengar seperti 'must of', tapi penulisannya salah. Should be: 'have'.",
+        t: "💡 Must HAVE, not Must OF.",
+        m: "⚠️ Kesalahan fonetik umum."
+    },
+    { 
+        q: "Will you mind opening the window?",
+        o: ["Will", "mind", "opening", "window"],
+        c: 0,
+        e: "Polite Request Error. Pasangan 'mind' biasanya 'Would', bukan 'Will'. Should be: 'Would'.",
+        t: "💡 Would you mind + V-ing?",
+        m: "⚠️ Menggunakan Will dengan Mind (kurang lazim/tepat dalam formal grammar)."
+    },
+    { 
+        q: "I would like to inviting you to dinner.",
+        o: ["would like", "to", "inviting", "dinner"],
+        c: 2,
+        e: "Infinitive Error. 'Would like to' + V1. Should be: 'invite'.",
+        t: "💡 Would like + TO + V1.",
+        m: "⚠️ Menggunakan V-ing setelah to."
+    },
+    { 
+        q: "He will have finishing the report by noon.",
+        o: ["will", "have", "finishing", "by noon"],
+        c: 2,
+        e: "Future Perfect Error. Will + Have + V3. Should be: 'finished'.",
+        t: "💡 Future Perfect: Will Have V3.",
+        m: "⚠️ Menggunakan V-ing pada bentuk perfect."
+    }
+];
+    /* ============================================================
+       BAGIAN 2: LOGIKA SISTEM (JANGAN DIEDIT KECUALI PAHAM)
+       ============================================================ */
+    
+    let currentQuestions = [];
+    let currentIdx = 0;
+    let score = 0;
+    let timer;
+    let timeLeft = TIME_LIMIT;
+    let answered = false;
+
+    function init() {
+        document.getElementById('display-topic').innerText = TOPIC_TITLE;
+        // Acak soal dan ambil sebanyak TOTAL_TO_SHOW
+        currentQuestions = pool.sort(() => 0.5 - Math.random()).slice(0, TOTAL_TO_SHOW);
+        startTimer();
+        showQuestion();
+    }
+
+    function startTimer() {
+        timer = setInterval(() => {
+            timeLeft--;
+            let m = Math.floor(timeLeft/60);
+            let s = timeLeft % 60;
+            document.getElementById('timer').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+            if(timeLeft <= 0) finish();
+        }, 1000);
+    }
+
+    function showQuestion() {
+        answered = false;
+        document.getElementById('next-btn').style.display = 'none';
+        document.getElementById('feedback-panel').style.display = 'none';
+        const q = currentQuestions[currentIdx];
+        
+        document.getElementById('progress-bar').style.width = (currentIdx / TOTAL_TO_SHOW * 100) + "%";
+        document.getElementById('q-text').innerText = `${currentIdx + 1}. ${q.q}`;
+        
+        const opts = document.getElementById('options');
+        opts.innerHTML = '';
+        q.o.forEach((o, i) => {
+            const b = document.createElement('button');
+            b.className = 'opt-btn';
+            b.innerText = o;
+            b.onclick = () => check(i, b);
+            opts.appendChild(b);
+        });
+    }
+
+    function check(idx, btn) {
+        if(answered) return;
+        answered = true;
+        const q = currentQuestions[currentIdx];
+        const all = document.querySelectorAll('.opt-btn');
+
+        if(idx === q.c) {
+            score++;
+            btn.classList.add('correct');
+            showFeedback("CORRECT", q.e);
+        } else {
+            btn.classList.add('wrong');
+            all[q.c].classList.add('correct');
+            showFeedback("INCORRECT", q.e);
+        }
+        document.getElementById('next-btn').style.display = 'block';
+    }
+
+    function showFeedback(status, text) {
+        const p = document.getElementById('feedback-panel');
+        document.getElementById('feedback-status').innerText = status;
+        document.getElementById('feedback-status').style.color = (status === "CORRECT") ? "var(--success)" : "var(--error)";
+        document.getElementById('feedback-desc').innerText = text;
+        p.style.display = 'block';
+    }
+
+    function goNext() {
+        currentIdx++;
+        if(currentIdx < TOTAL_TO_SHOW) showQuestion();
+        else finish();
+    }
+
+    function finish() {
+        clearInterval(timer);
+        document.getElementById('main-quiz').style.display = 'none';
+        document.getElementById('results').style.display = 'block';
+        document.getElementById('final-score').innerText = `${score}/${TOTAL_TO_SHOW}`;
+        
+        let msg = "";
+        let grade = "";
+        let percent = Math.round((score / TOTAL_TO_SHOW) * 100);
+
+        if(percent >= 85) { msg = "Excellent Work! Mastery Achieved."; grade = "A"; }
+        else if(percent >= 70) { msg = "Good Job! A bit more practice and you'll be perfect."; grade = "B"; }
+        else { msg = "Keep Practicing. Review the explanations to improve."; grade = "C"; }
+        
+        document.getElementById('rank-msg').innerText = msg;
+
+        setTimeout(() => {
+            if (typeof finishQuiz === "function") {
+                finishQuiz(percent, score, TOTAL_TO_SHOW, grade, msg, TOPIC_KEY);
+            }
+        }, 3000); 
+    }
+
+    init();
+</script>
+</body>
+</html>

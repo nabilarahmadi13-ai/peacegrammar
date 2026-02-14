@@ -1,0 +1,109 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+
+:root {
+    --primary: #6366f1; --secondary: #a855f7; --accent: #00d2ff;
+    --bg: #0f172a; --glass: rgba(255, 255, 255, 0.03);
+    --border: rgba(255, 255, 255, 0.1); --text: #f8fafc;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+body {
+    background: var(--bg);
+    background-image: radial-gradient(circle at 0% 0%, rgba(99,102,241,0.15), transparent 50%),
+                      radial-gradient(circle at 100% 100%, rgba(168,85,247,0.15), transparent 50%);
+    min-height: 100vh; display: flex; justify-content: center; align-items: center; color: var(--text); overflow: hidden;
+    transition: opacity 0.4s ease-out;
+}
+
+.app-container {
+    width: 100%; height: 100vh; max-width: 430px; max-height: 880px;
+    background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(30px);
+    border: 1px solid var(--border); position: relative; display: flex; flex-direction: column;
+}
+
+@media (min-width: 768px) {
+    .app-container { height: 85vh; border-radius: 45px; border: 6px solid #1e293b; box-shadow: 0 50px 100px rgba(0,0,0,0.5); }
+}
+
+.nav-top { padding: 20px 30px; display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; z-index: 10; }
+.content-wrapper { flex: 1; overflow-y: auto; padding: 20px 30px; scrollbar-width: none; }
+.content-wrapper::-webkit-scrollbar { display: none; }
+
+h1 { font-size: 2.2rem; font-weight: 800; background: linear-gradient(to right, #fff, var(--accent)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; }
+p { color: #94a3b8; margin-bottom: 25px; font-size: 14px; }
+
+.card { background: var(--glass); padding: 30px; border-radius: 30px; border: 1px solid var(--border); }
+input, select { width: 100%; padding: 18px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 18px; color: white; margin-bottom: 15px; outline: none; transition: 0.3s; }
+input:focus { border-color: var(--primary); background: rgba(255,255,255,0.1); }
+
+.btn { width: 100%; padding: 18px; border-radius: 18px; border: none; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.3s; margin-bottom: 12px; }
+.btn-primary { background: var(--primary); color: white; box-shadow: 0 10px 20px rgba(99,102,241,0.3); }
+.btn-primary:hover { transform: translateY(-3px); filter: brightness(1.1); }
+.btn-outline { background: transparent; color: white; border: 1px solid var(--border); }
+
+.level-card { background: var(--glass); padding: 20px; border-radius: 22px; border: 1px solid var(--border); margin-bottom: 15px; display: flex; align-items: center; cursor: pointer; transition: 0.3s; }
+.level-card:hover { transform: translateX(10px); background: rgba(255,255,255,0.1); border-color: var(--accent); }
+.level-card .icon { font-size: 24px; margin-right: 15px; }
+.level-card strong { display: block; font-size: 16px; }
+
+.hero-section { text-align: center; padding: 40px 0; }
+.app-logo {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.app-logo img {
+    width: 100px; /* Atur lebar logo sesuai keinginan */
+    height: auto;
+    filter: drop-shadow(0 0 15px rgba(99, 102, 241, 0.4)); /* Efek cahaya di sekitar logo */
+    animation: pulseLogo 3s infinite ease-in-out; /* Animasi logo bernafas */
+}
+@keyframes pulseLogo {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.9; }
+}
+.hidden { display: none; }
+.view { animation: fadeIn 0.4s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.btn-logout { width: 100%; padding: 15px; color: #ff4b2b; background: none; border: none; font-weight: 600; cursor: pointer; margin-top: 10px; }
+.btn-icon { background: none; border: none; color: white; font-size: 24px; cursor: pointer; margin-right: 15px; }
+.nav-header { display: flex; align-items: center; margin-bottom: 25px; }
+
+/* Spinner */
+.spinner { width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s linear infinite; display: inline-block; margin-right: 10px; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+/* Style Footer Spektakular */
+.app-footer {
+    padding: 20px;
+    text-align: center;
+    background: rgba(15, 23, 42, 0.4); /* Glass effect */
+    border-top: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+}
+
+.app-footer p {
+    font-size: 12px;
+    color: var(--text-main);
+    margin-bottom: 4px;
+    font-weight: 600;
+    opacity: 0.8;
+}
+
+.app-footer small {
+    font-size: 10px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 700;
+}
+
+/* Penyesuaian agar content wrapper tidak tertutup footer */
+.content-wrapper {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 30px;
+    padding-bottom: 40px; /* Jarak aman */
+}

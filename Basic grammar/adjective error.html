@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise - Grammar Peace</title>
+    <style>
+        :root {
+            --bg-color: #0a0e14;
+            --card-bg: #161b22;
+            --text-main: #c9d1d9;
+            --accent: #58a6ff;
+            --success: #2ea043;
+            --error: #da3633;
+            --border: #30363d;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .top-nav {
+            width: 100%;
+            max-width: 750px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .btn-back {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+        }
+
+        .btn-back:hover { background: #30363d; border-color: var(--accent); }
+
+        #quiz-wrapper {
+            background: var(--card-bg);
+            max-width: 750px;
+            width: 100%;
+            padding: 35px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .header h1 { font-size: 1.4rem; color: var(--accent); margin: 0; text-transform: uppercase; }
+        #timer { font-family: monospace; font-size: 1.2rem; color: #ffa657; }
+
+        .progress-container { height: 4px; background: #21262d; margin-bottom: 25px; }
+        #progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
+
+        .question-box { margin-bottom: 30px; }
+        .question-text { font-size: 1.2rem; margin-bottom: 20px; line-height: 1.5; }
+
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+
+        .opt-btn {
+            background: #21262d;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 15px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+
+        .opt-btn:hover:not(:disabled) { background: #30363d; border-color: #8b949e; }
+        .opt-btn.correct { background: var(--success) !important; color: white; }
+        .opt-btn.wrong { background: var(--error) !important; color: white; }
+
+        #feedback-panel {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 6px;
+            background: #0d1117;
+            border-left: 4px solid var(--accent);
+            display: none;
+        }
+
+        .feedback-exp { font-size: 0.95rem; color: #8b949e; margin-top: 8px; }
+
+        .btn-nav {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            float: right;
+            margin-top: 20px;
+            display: none;
+        }
+
+        #results { display: none; text-align: center; }
+        .score-circle { font-size: 3rem; color: var(--accent); margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+<div class="top-nav">
+    <button class="btn-back" onclick="window.location.href='../index.html'">
+        🏠 Back to Levels
+    </button>
+</div>
+
+<div id="quiz-wrapper">
+    <div id="main-quiz">
+        <div class="header">
+            <!-- EDIT DI SINI: JUDUL TOPIK -->
+            <h1 id="display-topic">TOPIC NAME</h1>
+            <div id="timer">05:00</div>
+        </div>
+
+        <div class="progress-container"><div id="progress-bar"></div></div>
+
+        <div class="question-box">
+            <div id="q-text" class="question-text"></div>
+            <div id="options" class="options-grid"></div>
+        </div>
+
+        <div id="feedback-panel">
+            <div id="feedback-status" style="font-weight:bold"></div>
+            <div id="feedback-desc" class="feedback-exp"></div>
+        </div>
+
+        <button id="next-btn" class="btn-nav" onclick="goNext()">NEXT QUESTION</button>
+    </div>
+
+    <div id="results">
+        <h1>EXAM COMPLETE</h1>
+        <div class="score-circle" id="final-score">0/0</div>
+        <p id="rank-msg" style="margin-bottom: 20px;"></p>
+        <p style="color: var(--accent); font-size: 0.9rem;">Redirecting to Performance Report...</p>
+    </div>
+</div>
+
+<script src="../app.js"></script>
+
+<script>
+    /* ============================================================
+       BAGIAN 1: KONFIGURASI SOAL (EDIT DI SINI)
+       ============================================================ */
+    
+    const TOPIC_TITLE = "Mastering Adjective"; // Ganti Judul
+    const TOPIC_KEY = "adjective error"; // HARUS SAMA dengan nama di TOPICS app.js
+    const TIME_LIMIT = 300; // Dalam detik (300 = 5 menit)
+    const TOTAL_TO_SHOW = 20; // Jumlah soal yang ditampilkan (misal dari 20 soal, ambil 10 acak)
+const pool = [
+    { 
+        q: "The afraid child ran to his mother.",
+        o: ["The afraid child", "ran", "to his mother", "No Error"],
+        c: 0,
+        e: "'Afraid' is predicative only. Should be: 'The frightened child' or 'The scared child'.",
+        t: "💡 Afraid = predicative only. Use frightened/scared before nouns.",
+        m: "⚠️ Common error - 'afraid' can't come before nouns."
+    },
+    { 
+        q: "She looks beautifully in that dress.",
+        o: ["She looks", "beautifully", "in that dress", "No Error"],
+        c: 1,
+        e: "'Look' is linking verb, needs adjective. Should be: 'She looks beautiful'.",
+        t: "💡 Look/seem/feel/sound/taste/smell + ADJECTIVE (not adverb).",
+        m: "⚠️ Beautifully = adverb. Beautiful = adjective."
+    },
+    { 
+        q: "The soup tastes deliciously.",
+        o: ["The soup", "tastes deliciously", "No Error", "No Error"],
+        c: 1,
+        e: "'Taste' is linking verb, needs adjective. Should be: 'The soup tastes delicious'.",
+        t: "💡 Taste + adjective (describes the soup, not how it tastes).",
+        m: "⚠️ Very common error with sensory verbs."
+    },
+    { 
+        q: "I found an asleep baby in the crib.",
+        o: ["I found", "an asleep baby", "in the crib", "No Error"],
+        c: 1,
+        e: "'Asleep' is predicative only. Should be: 'a sleeping baby' or 'The baby was asleep'.",
+        t: "💡 Asleep/awake/alive = predicative only. Use sleeping/awake/living before nouns.",
+        m: "⚠️ Can't use 'asleep' before nouns."
+    },
+    { 
+        q: "The reason is main for the cancellation.",
+        o: ["The reason", "is main", "for the cancellation", "No Error"],
+        c: 1,
+        e: "'Main' is attributive only. Should be: 'The main reason' OR 'The reason is primary/key'.",
+        t: "💡 Main = attributive only. Can't be predicative.",
+        m: "⚠️ Use different word if you need predicative (primary, key, chief)."
+    },
+    { 
+        q: "He feels badly about the situation.",
+        o: ["He", "feels badly", "about the situation", "No Error"],
+        c: 1,
+        e: "'Feel' is linking verb, needs adjective. Should be: 'He feels bad'.",
+        t: "💡 Feel + adjective (feel bad, feel good, feel sad).",
+        m: "⚠️ 'Badly' is adverb (for action verbs). 'Bad' is adjective (for linking verbs)."
+    },
+    { 
+        q: "The alive plants need more water.",
+        o: ["The alive plants", "need", "more water", "No Error"],
+        c: 0,
+        e: "'Alive' is predicative only. Should be: 'The living plants' or 'The plants that are alive'.",
+        t: "💡 Alive = predicative. Living/live = attributive.",
+        m: "⚠️ 'The alive...' is always grammatically wrong."
+    },
+    { 
+        q: "She smells sweetly like flowers.",
+        o: ["She smells", "sweetly", "like flowers", "No Error"],
+        c: 1,
+        e: "'Smell' as linking verb needs adjective. Should be: 'She smells sweet'.",
+        t: "💡 Smell + adjective = describes the subject. Smell + adverb = describes action of smelling.",
+        m: "⚠️ 'She smells sweet' (she has sweet smell). 'She smells sweetly' would mean she has good nose!"
+    },
+    { 
+        q: "My brother is elder than me.",
+        o: ["My brother", "is elder", "than me", "No Error"],
+        c: 1,
+        e: "'Elder' is attributive only. Should be: 'My elder brother' OR 'My brother is older'.",
+        t: "💡 Elder = attributive (elder brother). Older = both positions.",
+        m: "⚠️ Can't use 'elder' after 'is' or with 'than'."
+    },
+    { 
+        q: "This food tastes badly.",
+        o: ["This food", "tastes badly", "No Error", "No Error"],
+        c: 1,
+        e: "'Taste' is linking verb, needs adjective. Should be: 'This food tastes bad'.",
+        t: "💡 Taste + adjective (bad, good, delicious, awful).",
+        m: "⚠️ 'Badly' would mean the food has poor tasting ability!"
+    },
+    { 
+        q: "She is very aware student.",
+        o: ["She is", "very aware", "student", "No Error"],
+        c: 1,
+        e: "'Aware' is predicative only. Should be: 'She is a very aware student' OR use different word like 'conscious/alert'.",
+        t: "💡 Aware can't directly modify nouns. Need article 'a' or use different adjective.",
+        m: "⚠️ Even with article, 'aware student' sounds awkward - better: 'She is very aware' OR 'an alert student'."
+    },
+    { 
+        q: "The coffee smells wonderfully.",
+        o: ["The coffee", "smells wonderfully", "No Error", "No Error"],
+        c: 1,
+        e: "'Smell' is linking verb, needs adjective. Should be: 'The coffee smells wonderful'.",
+        t: "💡 Smell + adjective when describing the smell itself.",
+        m: "⚠️ Wonderfully = adverb. Wonderful = adjective."
+    },
+    { 
+        q: "He is an alone child in the family.",
+        o: ["He is", "an alone child", "in the family", "No Error"],
+        c: 1,
+        e: "'Alone' is predicative only. Should be: 'the only child' OR 'He is alone'.",
+        t: "💡 Alone = predicative. Only/sole = attributive.",
+        m: "⚠️ 'Alone' describes state of being, not an attribute before nouns."
+    },
+    { 
+        q: "She became angrily when she heard the news.",
+        o: ["She became", "angrily", "when she heard the news", "No Error"],
+        c: 1,
+        e: "'Become' is linking verb, needs adjective. Should be: 'She became angry'.",
+        t: "💡 Become/get/grow + adjective (not adverb).",
+        m: "⚠️ Angrily = adverb. Angry = adjective."
+    },
+    { 
+        q: "The music sounds loudly in this room.",
+        o: ["The music", "sounds loudly", "in this room", "No Error"],
+        c: 1,
+        e: "'Sound' as linking verb needs adjective. Should be: 'The music sounds loud'.",
+        t: "💡 Sound + adjective = describes the music. Sound + adverb = describes the action.",
+        m: "⚠️ 'Sounds loud' (the music is loud). To describe action: 'The music plays loudly'."
+    },
+    { 
+        q: "I saw an awake baby crying.",
+        o: ["I saw", "an awake baby", "crying", "No Error"],
+        c: 1,
+        e: "'Awake' is predicative only. Should be: 'The baby was awake and crying' OR 'a wakeful baby'.",
+        t: "💡 Awake = predicative only. Can't come before nouns.",
+        m: "⚠️ Use different structure or word if you need attributive position."
+    },
+    { 
+        q: "The part is inner of the machine.",
+        o: ["The part", "is inner", "of the machine", "No Error"],
+        c: 1,
+        e: "'Inner' is attributive only. Should be: 'the inner part' OR 'The part is internal'.",
+        t: "💡 Inner/outer = attributive only. Internal/external = both.",
+        m: "⚠️ Can't use 'inner' after 'is'."
+    },
+    { 
+        q: "He seems nervously before the exam.",
+        o: ["He seems", "nervously", "before the exam", "No Error"],
+        c: 1,
+        e: "'Seem' is linking verb, needs adjective. Should be: 'He seems nervous'.",
+        t: "💡 Seem/appear + adjective (nervous, happy, tired).",
+        m: "⚠️ Nervously = adverb. Nervous = adjective."
+    },
+    { 
+        q: "She is an ashamed girl.",
+        o: ["She is", "an ashamed girl", "No Error", "No Error"],
+        c: 1,
+        e: "'Ashamed' is predicative only. Should be: 'She is ashamed' OR 'She is a shameful person' (different meaning).",
+        t: "💡 Ashamed = feeling (predicative only). Shameful = causing shame (both positions).",
+        m: "⚠️ Can't put 'ashamed' before nouns."
+    },
+    { 
+        q: "The flowers smell sweetly in the garden.",
+        o: ["The flowers", "smell sweetly", "in the garden", "No Error"],
+        c: 1,
+        e: "'Smell' is linking verb, needs adjective. Should be: 'The flowers smell sweet'.",
+        t: "💡 Smell + adjective when describing the scent.",
+        m: "⚠️ 'Smell sweetly' would mean the flowers have a good sense of smell!"
+    }
+];
+
+    /* ============================================================
+       BAGIAN 2: LOGIKA SISTEM (JANGAN DIEDIT KECUALI PAHAM)
+       ============================================================ */
+    
+    let currentQuestions = [];
+    let currentIdx = 0;
+    let score = 0;
+    let timer;
+    let timeLeft = TIME_LIMIT;
+    let answered = false;
+
+    function init() {
+        document.getElementById('display-topic').innerText = TOPIC_TITLE;
+        // Acak soal dan ambil sebanyak TOTAL_TO_SHOW
+        currentQuestions = pool.sort(() => 0.5 - Math.random()).slice(0, TOTAL_TO_SHOW);
+        startTimer();
+        showQuestion();
+    }
+
+    function startTimer() {
+        timer = setInterval(() => {
+            timeLeft--;
+            let m = Math.floor(timeLeft/60);
+            let s = timeLeft % 60;
+            document.getElementById('timer').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+            if(timeLeft <= 0) finish();
+        }, 1000);
+    }
+
+    function showQuestion() {
+        answered = false;
+        document.getElementById('next-btn').style.display = 'none';
+        document.getElementById('feedback-panel').style.display = 'none';
+        const q = currentQuestions[currentIdx];
+        
+        document.getElementById('progress-bar').style.width = (currentIdx / TOTAL_TO_SHOW * 100) + "%";
+        document.getElementById('q-text').innerText = `${currentIdx + 1}. ${q.q}`;
+        
+        const opts = document.getElementById('options');
+        opts.innerHTML = '';
+        q.o.forEach((o, i) => {
+            const b = document.createElement('button');
+            b.className = 'opt-btn';
+            b.innerText = o;
+            b.onclick = () => check(i, b);
+            opts.appendChild(b);
+        });
+    }
+
+    function check(idx, btn) {
+        if(answered) return;
+        answered = true;
+        const q = currentQuestions[currentIdx];
+        const all = document.querySelectorAll('.opt-btn');
+
+        if(idx === q.c) {
+            score++;
+            btn.classList.add('correct');
+            showFeedback("CORRECT", q.e);
+        } else {
+            btn.classList.add('wrong');
+            all[q.c].classList.add('correct');
+            showFeedback("INCORRECT", q.e);
+        }
+        document.getElementById('next-btn').style.display = 'block';
+    }
+
+    function showFeedback(status, text) {
+        const p = document.getElementById('feedback-panel');
+        document.getElementById('feedback-status').innerText = status;
+        document.getElementById('feedback-status').style.color = (status === "CORRECT") ? "var(--success)" : "var(--error)";
+        document.getElementById('feedback-desc').innerText = text;
+        p.style.display = 'block';
+    }
+
+    function goNext() {
+        currentIdx++;
+        if(currentIdx < TOTAL_TO_SHOW) showQuestion();
+        else finish();
+    }
+
+    function finish() {
+        clearInterval(timer);
+        document.getElementById('main-quiz').style.display = 'none';
+        document.getElementById('results').style.display = 'block';
+        document.getElementById('final-score').innerText = `${score}/${TOTAL_TO_SHOW}`;
+        
+        let msg = "";
+        let grade = "";
+        let percent = Math.round((score / TOTAL_TO_SHOW) * 100);
+
+        if(percent >= 85) { msg = "Excellent Work! Mastery Achieved."; grade = "A"; }
+        else if(percent >= 70) { msg = "Good Job! A bit more practice and you'll be perfect."; grade = "B"; }
+        else { msg = "Keep Practicing. Review the explanations to improve."; grade = "C"; }
+        
+        document.getElementById('rank-msg').innerText = msg;
+
+        setTimeout(() => {
+            if (typeof finishQuiz === "function") {
+                finishQuiz(percent, score, TOTAL_TO_SHOW, grade, msg, TOPIC_KEY);
+            }
+        }, 3000); 
+    }
+
+    init();
+</script>
+</body>
+</html>

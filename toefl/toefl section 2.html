@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOEFL Simulation - Grammar Peace</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --text-main: #c9d1d9;
+            --accent: #58a6ff;
+            --success: #2ea043;
+            --error: #da3633;
+            --border: #30363d;
+            --gold: #f2cc60;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        #quiz-container {
+            width: 95%;
+            max-width: 850px;
+            margin: 20px auto;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .header h1 { font-size: 1.2rem; color: var(--accent); margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+        #timer { font-family: 'Courier New', Courier, monospace; font-size: 1.4rem; color: var(--gold); font-weight: bold; }
+
+        .progress-box { width: 100%; height: 6px; background: #21262d; border-radius: 3px; margin-bottom: 25px; overflow: hidden; }
+        #progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.4s ease; }
+
+        .question-section { margin-bottom: 30px; }
+        .type-badge { display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-bottom: 15px; background: #30363d; color: var(--accent); }
+
+        .q-text { font-size: 1.15rem; line-height: 1.6; margin-bottom: 25px; }
+        .u-line { border-bottom: 2px solid var(--accent); padding: 0 2px; font-weight: bold; cursor: help; color: var(--accent); }
+
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        .opt-btn {
+            background: #21262d;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 15px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 1rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+        }
+        .opt-btn:hover:not(:disabled) { background: #30363d; border-color: var(--accent); }
+        .opt-btn.correct { background: var(--success) !important; border-color: var(--success); color: white; }
+        .opt-btn.wrong { background: var(--error) !important; border-color: var(--error); color: white; }
+        .opt-prefix { font-weight: bold; margin-right: 15px; color: var(--accent); }
+
+        #feedback-panel {
+            margin-top: 25px;
+            padding: 20px;
+            background: #0d1117;
+            border-left: 4px solid var(--accent);
+            border-radius: 0 8px 8px 0;
+            display: none;
+        }
+        .feedback-title { font-weight: bold; margin-bottom: 10px; font-size: 1rem; }
+        .feedback-content { font-size: 0.9rem; color: #8b949e; line-height: 1.5; }
+        .tip-box { color: var(--accent); margin-top: 10px; font-style: italic; }
+        .mistake-box { color: #ffa657; margin-top: 5px; }
+
+        .nav-footer { margin-top: 30px; display: flex; justify-content: flex-end; }
+        .btn-next { background: var(--accent); color: white; border: none; padding: 12px 35px; border-radius: 6px; font-weight: bold; cursor: pointer; display: none; }
+
+        /* Result Styles */
+        #result-screen { display: none; text-align: center; padding: 40px 0; }
+        .score-circle { width: 150px; height: 150px; border: 8px solid var(--accent); border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; margin: 20px auto; }
+        .score-val { font-size: 2.5rem; font-weight: bold; margin: 0; }
+        .score-label { font-size: 0.8rem; text-transform: uppercase; opacity: 0.7; }
+        .toefl-scale { color: var(--gold); font-size: 1.5rem; font-weight: bold; margin-top: 10px; }
+        .top-nav {
+    width: 100%;
+    max-width: 900px; /* Samakan dengan max-width app-container */
+    margin: 20px auto 0 auto;
+    padding: 0 20px;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.btn-back {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-back:hover {
+    background: #30363d;
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: translateX(-3px);
+}
+    </style>
+</head>
+<body>
+<div class="top-nav">
+    <button class="btn-back" onclick="window.location.href='../index.html'">
+        🏠 Back to Levels
+    </button>
+<div id="quiz-container">
+    <!-- Quiz Interface -->
+    <div id="quiz-ui">
+        <div class="header">
+            <h1>Structure & Written Expression</h1>
+            <div id="timer">25:00</div>
+        </div>
+
+        <div class="progress-box"><div id="progress-bar"></div></div>
+
+        <div class="question-section">
+            <div id="type-tag" class="type-badge">SECTION 1: STRUCTURE</div>
+            <div id="q-display" class="q-text"></div>
+            <div id="options-display" class="options-grid"></div>
+        </div>
+
+        <div id="feedback-panel">
+            <div id="f-status" class="feedback-title"></div>
+            <div class="feedback-content">
+                <div id="f-exp"></div>
+                <div id="f-tip" class="tip-box"></div>
+                <div id="f-mistake" class="mistake-box"></div>
+            </div>
+        </div>
+
+        <div class="nav-footer">
+            <button id="next-btn" class="btn-next" onclick="handleNext()">Next Question</button>
+        </div>
+    </div>
+
+    <!-- Result Interface -->
+    <div id="result-screen">
+        <h2>COMPLETED</h2>
+        <div class="score-circle">
+            <p class="score-label">Raw Score</p>
+            <p id="raw-score" class="score-val">0/40</p>
+        </div>
+        <p>Estimated TOEFL Section 2 Score:</p>
+        <div id="scaled-score" class="toefl-scale">31</div>
+        <p id="performance-msg" style="margin-top: 20px; color: #8b949e;"></p>
+        <button class="btn-next" style="display:inline-block; float:none; margin-top:30px;" onclick="location.reload()">Retake Exam</button>
+    </div>
+</div>
+<script src="../app.js"></script>
+<script>
+/* ================= SOAL POOL (40 SOAL) ================= */
+const questions = [
+    // 20 FILL IN THE BLANK
+    { q: "If the company ______ the patent earlier, they would not have lost their legal battle.", o: ["claims", "had claimed", "claimed", "would claim"], c: 1, e: "Type 3 Conditional: Menunjukkan penyesalan masa lalu. Rumus: If + Past Perfect, would have + V3.", t: "💡 Lihat 'would not have lost' sebagai penanda utama.", m: "⚠️ Jangan gunakan 'would' di dalam klausa if.", type: "Structure" },
+    { q: "Had the pilot ______ the warning, the disaster could have been avoided.", o: ["see", "seen", "saw", "seeing"], c: 1, e: "Inverted Conditional Type 3: 'Had' di depan menggantikan 'If'. Membutuhkan Past Participle (V3).", t: "💡 Had + S + V3.", m: "⚠️ 'Saw' adalah V2, gunakan 'seen' (V3).", type: "Structure" },
+    { q: "Unless the climate ______ significantly, many species will face extinction.", o: ["stabilizes", "doesn't stabilize", "will stabilize", "stabilized"], c: 0, e: "Unless bermakna 'If not'. Kalimat setelahnya harus positif agar tidak double negative.", t: "💡 Unless + Positive Verb.", m: "⚠️ Jangan gunakan 'Unless it doesn't'.", type: "Structure" },
+    { q: "Of the two proposals submitted, the latter is clearly ______.", o: ["best", "better", "the better", "more good"], c: 2, e: "Membandingkan tepat 2 hal gunakan 'the + comparative'.", t: "💡 Of the two -> The better.", m: "⚠️ '-est' (best) hanya untuk lebih dari 2 objek.", type: "Structure" },
+    { q: "The harder you practice, ______ you will perform under pressure.", o: ["good", "best", "the better", "better"], c: 2, e: "Double Comparative: Semakin... semakin... Rumus: The + comp, the + comp.", t: "💡 The more... the better...", m: "⚠️ Jangan lupakan 'the' di klausa kedua.", type: "Structure" },
+    { q: "Iron is ______ than gold, though it is not as valuable.", o: ["heavier", "heavy", "heaviest", "more heavy"], c: 0, e: "Comparative standar untuk kata sifat pendek (1 suku kata).", t: "💡 Heavy -> Heavier.", m: "⚠️ 'More heavy' tidak baku.", type: "Structure" },
+    { q: "The artifacts ______ were discovered in the cave date back to the Bronze Age.", o: ["who", "whom", "which", "whose"], c: 2, e: "Relative pronoun untuk benda mati (artifacts) adalah 'which'.", t: "💡 Which untuk benda, Who untuk orang.", m: "⚠️ Artifacts bukan manusia, jangan gunakan who.", type: "Structure" },
+    { q: "The city ______ I was born is very industrial.", o: ["which", "where", "that", "when"], c: 1, e: "Relative adverb untuk menerangkan tempat adalah 'where'.", t: "💡 Where = in which.", m: "⚠️ Gunakan 'which' hanya jika ada preposisi (in which).", type: "Structure" },
+    { q: "The man ______ car was stolen reported it immediately.", o: ["who", "whom", "whose", "which"], c: 2, e: "Possessive relative 'whose' menunjukkan kepemilikan benda oleh seseorang.", t: "💡 Whose + Noun.", m: "⚠️ Who's berarti 'who is', bukan kepemilikan.", type: "Structure" },
+    { q: "______ he wins or loses depends on his preparation.", o: ["That", "Whether", "What", "Which"], c: 1, e: "Noun clause 'Whether' digunakan untuk pilihan 'ya atau tidak'.", t: "💡 Ada kata 'or' sebagai petunjuk utama.", m: "⚠️ 'If' tidak bisa jadi subjek di awal kalimat.", type: "Structure" },
+    { q: "Scientists don't know ______ causes the phenomenon.", o: ["that", "what", "which", "whether"], c: 1, e: "Noun clause 'what' berfungsi sebagai subjek sekaligus penghubung dalam klausa.", t: "💡 What = The thing that.", m: "⚠️ 'That' butuh subjek baru di belakangnya.", type: "Structure" },
+    { q: "I cannot explain ______ the error occurred.", o: ["that", "how", "what", "which"], c: 1, e: "Menjelaskan cara/proses (manner).", t: "💡 How = Cara.", m: "⚠️ Jangan gunakan susunan tanya (how did it occur) di sini.", type: "Structure" },
+    { q: "He avoided ______ the question directly.", o: ["to answer", "answer", "answering", "answered"], c: 2, e: "Verb 'Avoid' diikuti oleh Gerund (V-ing).", t: "💡 List: Avoid, Enjoy, Finish + V-ing.", m: "⚠️ Hindari 'to answer'.", type: "Structure" },
+    { q: "It's no use ______ about the past.", o: ["cry", "crying", "to cry", "to crying"], c: 1, e: "Idiom 'It's no use' wajib diikuti Gerund.", t: "💡 It's no use + V-ing.", m: "⚠️ Pola ini dilarang menggunakan to-infinitive.", type: "Structure" },
+    { q: "She wants ______ a doctor after graduating from university.", o: ["be", "to be", "being", "been"], c: 1, e: "Verb 'Want' diikuti oleh To-Infinitive.", t: "💡 Want + to + V1.", m: "⚠️ Jangan gunakan V-ing setelah want.", type: "Structure" },
+    { q: "He is too young ______ a car in this country.", o: ["drive", "driving", "to drive", "driven"], c: 2, e: "Pola: Too + Adj + To-Infinitive.", t: "💡 Too... to... (Terlalu... untuk...).", m: "⚠️ Jangan gunakan 'for drive'.", type: "Structure" },
+    { q: "The man ______ over there is my brother.", o: ["stand", "standing", "stood", "stands"], c: 1, e: "Present Participle sebagai adjective aktif (yang berdiri).", t: "💡 Singkatan dari 'who is standing'.", m: "⚠️ 'Stand' akan menyebabkan double verb.", type: "Structure" },
+    { q: "______ the task, he went home to get some rest.", o: ["Finish", "Finishing", "Finished", "To finish"], c: 1, e: "Participle phrase aktif di awal kalimat.", t: "💡 V-ing di awal = Sambil/Setelah (Aktif).", m: "⚠️ 'Finished' berarti dia yang diselesaikan (pasif).", type: "Structure" },
+    { q: "______ it was raining, the game continued as planned.", o: ["Because", "Although", "Since", "Despite"], c: 1, e: "Hubungan pertentangan (Concession). Meskipun hujan, tetap lanjut.", t: "💡 Although + S + V.", m: "⚠️ 'Despite' harus diikuti Noun Phrase.", type: "Structure" },
+    { q: "I will call you as soon as I ______ home.", o: ["get", "will get", "got", "am getting"], c: 0, e: "Time Clause (as soon as) menggunakan Present Simple untuk masa depan.", t: "💡 As soon as + Present Simple.", m: "⚠️ Dilarang gunakan 'will' di klausa waktu.", type: "Structure" },
+
+    // 20 ERROR ANALYSIS
+    { q: "If the <span class='u-line'>average</span> temperature <span class='u-line'>was to rise</span>, the ice caps <span class='u-line'>will melt</span> more <span class='u-line'>rapidly</span>.", o: ["average", "was to rise", "will melt", "rapidly"], c: 2, e: "Type 2 Error. 'Was to rise' (past) harus berpasangan dengan 'would', bukan 'will'.", t: "💡 Kondisi Past -> Hasil Would.", m: "⚠️ Perbaiki menjadi 'would melt'.", type: "Written Expression" },
+    { q: "If I <span class='u-line'>was</span> you, I <span class='u-line'>would</span> invest <span class='u-line'>in</span> the renewable <span class='u-line'>energy</span> sector.", o: ["was", "would", "in", "energy"], c: 0, e: "Subjunctive Error. Untuk pengandaian tak nyata, gunakan 'were' untuk semua subjek.", t: "💡 If I were you.", m: "⚠️ 'Was' salah dalam TOEFL formal.", type: "Written Expression" },
+    { q: "Jupiter <span class='u-line'>is</span> the <span class='u-line'>most largest</span> planet <span class='u-line'>in</span> our solar <span class='u-line'>system</span>.", o: ["is", "most largest", "in", "system"], c: 1, e: "Double Superlative. 'Largest' sudah mencakup makna 'paling'.", t: "💡 Hapus 'most'.", m: "⚠️ Double superlative adalah kesalahan umum.", type: "Written Expression" },
+    { q: "This <span class='u-line'>book</span> is <span class='u-line'>more</span> interesting <span class='u-line'>as</span> the one <span class='u-line'>we</span> read.", o: ["book", "more", "as", "we"], c: 2, e: "Comparative Pair. 'More' berpasangan dengan 'than'.", t: "💡 More... than.", m: "⚠️ 'As' hanya untuk kesetaraan (as...as).", type: "Written Expression" },
+    { q: "The geologist <span class='u-line'>what</span> discovered the <span class='u-line'>fossil</span> <span class='u-line'>refused</span> to give a <span class='u-line'>press interview</span>.", o: ["what", "fossil", "refused", "press interview"], c: 0, e: "Relative Pronoun. 'What' tidak bisa merujuk ke orang (geologist).", t: "💡 Orang -> Who.", m: "⚠️ Ganti 'what' menjadi 'who'.", type: "Written Expression" },
+    { q: "The <span class='u-line'>book</span> <span class='u-line'>that</span> I read <span class='u-line'>it</span> yesterday was <span class='u-line'>fantastic</span>.", o: ["book", "that", "it", "fantastic"], c: 2, e: "Redundant Pronoun. 'That' sudah menggantikan 'book', jadi 'it' harus dibuang.", t: "💡 Hapus objek setelah relative pronoun.", m: "⚠️ Ini jebakan paling sering di TOEFL Section 2.", type: "Written Expression" },
+    { q: "I <span class='u-line'>wonder</span> <span class='u-line'>why did he</span> leave <span class='u-line'>the</span> meeting <span class='u-line'>early</span>.", o: ["wonder", "why did he", "the", "early"], c: 1, e: "Noun Clause Order. Susunan harus S+V, bukan tanya.", t: "💡 why he left.", m: "⚠️ Jangan gunakan auxiliary (did/do) di noun clause.", type: "Written Expression" },
+    { q: "The <span class='u-line'>fact</span> <span class='u-line'>what</span> he was <span class='u-line'>elected</span> surprised <span class='u-line'>everyone</span>.", o: ["fact", "what", "elected", "everyone"], c: 1, e: "Noun Clause Connector. Untuk isi dari 'fact', gunakan 'that'.", t: "💡 The fact that...", m: "⚠️ 'What' tidak bisa menjelaskan noun sebelumnya.", type: "Written Expression" },
+    { q: "I <span class='u-line'>am</span> <span class='u-line'>looking</span> forward <span class='u-line'>to</span> <span class='u-line'>see</span> you again.", o: ["am", "looking", "to", "see"], c: 3, e: "Gerund Error. 'Look forward to' butuh V-ing.", t: "💡 To di sini preposisi.", m: "⚠️ Ganti 'see' menjadi 'seeing'.", type: "Written Expression" },
+    { q: "He <span class='u-line'>denied</span> <span class='u-line'>to steal</span> the <span class='u-line'>money</span> from <span class='u-line'>the bank</span>.", o: ["denied", "to steal", "money", "the bank"], c: 1, e: "Verb Pattern. 'Deny' butuh Gerund.", t: "💡 Deny + V-ing.", m: "⚠️ Ganti menjadi 'stealing'.", type: "Written Expression" },
+    { q: "The <span class='u-line'>manager</span> <span class='u-line'>made</span> us <span class='u-line'>to stay</span> <span class='u-line'>late</span>.", o: ["manager", "made", "to stay", "late"], c: 2, e: "Causative Error. 'Make' aktif diikuti V1 tanpa 'to'.", t: "💡 Make + Obj + V1.", m: "⚠️ Perbaiki menjadi 'stay'.", type: "Written Expression" },
+    { q: "He <span class='u-line'>refused</span> <span class='u-line'>joining</span> the <span class='u-line'>new</span> <span class='u-line'>club</span>.", o: ["refused", "joining", "new", "club"], c: 1, e: "Verb Pattern. 'Refuse' butuh To-Infinitive.", t: "💡 Refuse + To + V1.", m: "⚠️ Ganti menjadi 'to join'.", type: "Written Expression" },
+    { q: "The <span class='u-line'>broken</span> window <span class='u-line'>was</span> <span class='u-line'>fixing</span> by <span class='u-line'>him</span>.", o: ["broken", "was", "fixing", "him"], c: 2, e: "Passive Voice. Jendela 'diperbaiki' (pasif).", t: "💡 Be + V3 (fixed).", m: "⚠️ 'Fixing' bermakna aktif.", type: "Written Expression" },
+    { q: "I <span class='u-line'>was</span> <span class='u-line'>very</span> <span class='u-line'>surprising</span> by <span class='u-line'>the</span> news.", o: ["was", "very", "surprising", "the"], c: 2, e: "Participle Adjective. Orang (I) merasa 'terkejut', gunakan V-ed.", t: "💡 V-ed untuk feeling.", m: "⚠️ Ganti menjadi 'surprised'.", type: "Written Expression" },
+    { q: "He <span class='u-line'>studied</span> hard <span class='u-line'>so that</span> he <span class='u-line'>could</span> <span class='u-line'>passed</span> the exam.", o: ["studied", "so that", "could", "passed"], c: 3, e: "Modal Error. Setelah modal (could), gunakan V1 murni.", t: "💡 Could + V1.", m: "⚠️ Hapus akhiran -ed.", type: "Written Expression" },
+    { q: "Since <span class='u-line'>it</span> was <span class='u-line'>late</span>, <span class='u-line'>but</span> we decided <span class='u-line'>to leave</span>.", o: ["it", "late", "but", "to leave"], c: 2, e: "Double Conjunction. 'Since' dan 'but' tidak boleh satu kalimat.", t: "💡 Hapus salah satu.", m: "⚠️ Jangan gunakan dua penghubung untuk satu makna.", type: "Written Expression" },
+    { q: "Had he <span class='u-line'>knew</span> <span class='u-line'>about</span> the <span class='u-line'>danger</span>, he <span class='u-line'>would have</span> stayed.", o: ["knew", "about", "danger", "would have"], c: 0, e: "Inversion Error. Had + Subject + V3.", t: "💡 Knew (V2) vs Known (V3).", m: "⚠️ Ganti menjadi 'known'.", type: "Written Expression" },
+    { q: "This laptop <span class='u-line'>is</span> <span class='u-line'>superior</span> <span class='u-line'>than</span> the previous <span class='u-line'>model</span>.", o: ["is", "superior", "than", "model"], c: 2, e: "Special Adjective. 'Superior' butuh preposisi 'to'.", t: "💡 Superior to.", m: "⚠️ Jangan terjebak 'more than'.", type: "Written Expression" },
+    { q: "The man <span class='u-line'>to who</span> I <span class='u-line'>spoke</span> was <span class='u-line'>extremely</span> <span class='u-line'>helpful</span>.", o: ["to who", "spoke", "extremely", "helpful"], c: 0, e: "Relative Pronoun. Setelah preposisi gunakan 'whom'.", t: "💡 Preposition + Whom.", m: "⚠️ Perbaiki menjadi 'to whom'.", type: "Written Expression" },
+    { q: "He <span class='u-line'>suggested</span> that she <span class='u-line'>attends</span> the <span class='u-line'>orientation</span> <span class='u-line'>program</span>.", o: ["suggested", "attends", "orientation", "program"], c: 1, e: "Subjunctive Error. Setelah 'suggest that' gunakan V1 murni.", t: "💡 Suggest that + S + V1.", m: "⚠️ Hapus akhiran -s.", type: "Written Expression" }
+];
+
+/* ================= QUIZ LOGIC ================= */
+let currentIdx = 0;
+let score = 0;
+let timeLeft = 1500; // 25 Menit
+let timer;
+let answered = false;
+
+function init() {
+    startTimer();
+    showQuestion();
+}
+
+function startTimer() {
+    timer = setInterval(() => {
+        timeLeft--;
+        const m = Math.floor(timeLeft / 60);
+        const s = timeLeft % 60;
+        document.getElementById('timer').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        if(timeLeft <= 0) finish();
+    }, 1000);
+}
+
+function showQuestion() {
+    answered = false;
+    document.getElementById('next-btn').style.display = 'none';
+    document.getElementById('feedback-panel').style.display = 'none';
+    
+    const q = questions[currentIdx];
+    document.getElementById('progress-bar').style.width = ((currentIdx + 1) / questions.length * 100) + "%";
+    document.getElementById('type-tag').innerText = `QUESTION ${currentIdx + 1}: ${q.type}`;
+    document.getElementById('q-display').innerHTML = q.q;
+
+    const opts = document.getElementById('options-display');
+    opts.innerHTML = '';
+    
+    const prefixes = ['(A)', '(B)', '(C)', '(D)'];
+    q.o.forEach((o, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'opt-btn';
+        btn.innerHTML = `<span class="opt-prefix">${prefixes[i]}</span> ${o}`;
+        btn.onclick = () => checkAnswer(i, btn);
+        opts.appendChild(btn);
+    });
+}
+
+function checkAnswer(idx, btn) {
+    if(answered) return;
+    answered = true;
+    
+    const q = questions[currentIdx];
+    const allBtns = document.querySelectorAll('.opt-btn');
+
+    if(idx === q.c) {
+        score++;
+        btn.classList.add('correct');
+        showFeedback("CORRECT ✅", q);
+    } else {
+        btn.classList.add('wrong');
+        allBtns[q.c].classList.add('correct');
+        showFeedback("INCORRECT ❌", q);
+    }
+    
+    document.getElementById('next-btn').style.display = 'block';
+}
+
+function showFeedback(status, q) {
+    const f = document.getElementById('feedback-panel');
+    document.getElementById('f-status').innerText = status;
+    document.getElementById('f-status').style.color = status.includes("CORRECT") ? "var(--success)" : "var(--error)";
+    document.getElementById('f-exp').innerText = q.e;
+    document.getElementById('f-tip').innerText = q.t;
+    document.getElementById('f-mistake').innerText = q.m;
+    f.style.display = 'block';
+}
+
+function handleNext() {
+    currentIdx++;
+    if(currentIdx < questions.length) {
+        showQuestion();
+    } else {
+        finish();
+    }
+}
+
+function finish() {
+    clearInterval(timer);
+    document.getElementById('quiz-ui').style.display = 'none';
+    document.getElementById('result-screen').style.display = 'block';
+    
+    document.getElementById('raw-score').innerText = `${score}/40`;
+    
+    // Estimasi Skor TOEFL Section 2 (Structure & Written Expression)
+    // Berdasarkan tabel konversi standar (Skala 31-68)
+    const toeflScale = [
+        31,31,31,31,31,31,31,31,31,32,32,33,35,36,37,38,40,41,43,44,
+        45,46,47,48,49,50,51,52,53,54,55,56,57,58,60,61,63,65,67,68,68
+    ];
+    
+    const scaled = toeflScale[score];
+    document.getElementById('scaled-score').innerText = scaled;
+
+    let msg = "";
+    if(scaled >= 60) msg = "Mastery Level! You have an excellent command of English grammar.";
+    else if(scaled >= 50) msg = "Advanced Level! Good job, just a few more refinements needed.";
+    else if(scaled >= 40) msg = "Intermediate Level! Keep practicing, you are on the right track.";
+    else msg = "Novice Level! Focus on reviewing basic and intermediate grammar rules.";
+    
+    document.getElementById('performance-msg').innerText = msg;
+}
+function goHome() {
+    // Jika ingin memberi konfirmasi saat kuis sedang berlangsung
+    if (currentIdx < quizData.length && timeLeft > 0 && !document.getElementById('result-screen').style.display === 'block') {
+        if (confirm("Are you sure you want to leave? Your progress will be lost.")) {
+            window.location.href = '../index.html'; // Sesuaikan dengan path file home Anda
+        }
+    } else {
+        window.location.href = '../index.html';
+    }
+}
+init();
+</script>
+
+</body>
+</html>

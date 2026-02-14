@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise - Grammar Peace</title>
+    <style>
+        :root {
+            --bg-color: #0a0e14;
+            --card-bg: #161b22;
+            --text-main: #c9d1d9;
+            --accent: #58a6ff;
+            --success: #2ea043;
+            --error: #da3633;
+            --border: #30363d;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .top-nav {
+            width: 100%;
+            max-width: 750px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .btn-back {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+        }
+
+        .btn-back:hover { background: #30363d; border-color: var(--accent); }
+
+        #quiz-wrapper {
+            background: var(--card-bg);
+            max-width: 750px;
+            width: 100%;
+            padding: 35px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .header h1 { font-size: 1.4rem; color: var(--accent); margin: 0; text-transform: uppercase; }
+        #timer { font-family: monospace; font-size: 1.2rem; color: #ffa657; }
+
+        .progress-container { height: 4px; background: #21262d; margin-bottom: 25px; }
+        #progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
+
+        .question-box { margin-bottom: 30px; }
+        .question-text { font-size: 1.2rem; margin-bottom: 20px; line-height: 1.5; }
+
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+
+        .opt-btn {
+            background: #21262d;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 15px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+
+        .opt-btn:hover:not(:disabled) { background: #30363d; border-color: #8b949e; }
+        .opt-btn.correct { background: var(--success) !important; color: white; }
+        .opt-btn.wrong { background: var(--error) !important; color: white; }
+
+        #feedback-panel {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 6px;
+            background: #0d1117;
+            border-left: 4px solid var(--accent);
+            display: none;
+        }
+
+        .feedback-exp { font-size: 0.95rem; color: #8b949e; margin-top: 8px; }
+
+        .btn-nav {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            float: right;
+            margin-top: 20px;
+            display: none;
+        }
+
+        #results { display: none; text-align: center; }
+        .score-circle { font-size: 3rem; color: var(--accent); margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+<div class="top-nav">
+    <button class="btn-back" onclick="window.location.href='../index.html'">
+        🏠 Back to Levels
+    </button>
+</div>
+
+<div id="quiz-wrapper">
+    <div id="main-quiz">
+        <div class="header">
+            <!-- EDIT DI SINI: JUDUL TOPIK -->
+            <h1 id="display-topic">TOPIC NAME</h1>
+            <div id="timer">05:00</div>
+        </div>
+
+        <div class="progress-container"><div id="progress-bar"></div></div>
+
+        <div class="question-box">
+            <div id="q-text" class="question-text"></div>
+            <div id="options" class="options-grid"></div>
+        </div>
+
+        <div id="feedback-panel">
+            <div id="feedback-status" style="font-weight:bold"></div>
+            <div id="feedback-desc" class="feedback-exp"></div>
+        </div>
+
+        <button id="next-btn" class="btn-nav" onclick="goNext()">NEXT QUESTION</button>
+    </div>
+
+    <div id="results">
+        <h1>EXAM COMPLETE</h1>
+        <div class="score-circle" id="final-score">0/0</div>
+        <p id="rank-msg" style="margin-bottom: 20px;"></p>
+        <p style="color: var(--accent); font-size: 0.9rem;">Redirecting to Performance Report...</p>
+    </div>
+</div>
+
+<script src="../app.js"></script>
+
+<script>
+    /* ============================================================
+       BAGIAN 1: KONFIGURASI SOAL (EDIT DI SINI)
+       ============================================================ */
+    
+    const TOPIC_TITLE = "Mastering Adverb"; // Ganti Judul
+    const TOPIC_KEY = "adverb fill"; // HARUS SAMA dengan nama di TOPICS app.js
+    const TIME_LIMIT = 300; // Dalam detik (300 = 5 menit)
+    const TOTAL_TO_SHOW = 20; // Jumlah soal yang ditampilkan (misal dari 20 soal, ambil 10 acak)
+const pool = [
+    { 
+        q: "Complete: 'She speaks English _______.' (in a fluent way)", 
+        o: ["fluent", "fluently", "fluency", "fluented"], 
+        c: 1, 
+        e: "'Fluently' is adverb (modifies verb 'speaks' - HOW she speaks).",
+        t: "💡 Adverbs modify verbs (how, when, where). Usually add -ly to adjectives.",
+        m: "⚠️ Fluent = adjective (fluent English). Fluently = adverb (speaks fluently)."
+    },
+    { 
+        q: "Complete: 'He is a _______ worker.' (works hard)", 
+        o: ["hard", "hardly", "hardness", "harder"], 
+        c: 0, 
+        e: "'Hard' is adjective before noun 'worker'.",
+        t: "💡 Before nouns, use adjectives (not adverbs).",
+        m: "⚠️ 'Hard' can be both adjective AND adverb. 'Hardly' = almost not (different meaning)."
+    },
+    { 
+        q: "Complete: 'She works _______.' (puts in effort)", 
+        o: ["hard", "hardly", "hardness", "harder"], 
+        c: 0, 
+        e: "'Hard' is adverb (modifies verb 'works' - HOW she works).",
+        t: "💡 'Hard' is irregular - same form for adjective and adverb.",
+        m: "⚠️ 'Works hardly' means 'almost doesn't work' (wrong meaning)."
+    },
+    { 
+        q: "Which modifies a verb?", 
+        o: ["Beautiful", "Quickly", "Tall", "Happy"], 
+        c: 1, 
+        e: "'Quickly' is adverb (can modify verb: runs quickly).",
+        t: "💡 Adverbs modify verbs, adjectives, or other adverbs.",
+        m: "⚠️ Most adverbs end in -ly (but not all: fast, hard, well)."
+    },
+    { 
+        q: "Complete: 'The test was _______ easy.' (surprisingly)", 
+        o: ["surprising", "surprisingly", "surprise", "surprised"], 
+        c: 1, 
+        e: "'Surprisingly' is adverb (modifies adjective 'easy' - HOW easy).",
+        t: "💡 Adverbs can modify adjectives: very tall, extremely hot, surprisingly easy.",
+        m: "⚠️ Need adverb to modify adjective."
+    },
+    { 
+        q: "Complete: 'He drives _______.' (with care)", 
+        o: ["careful", "carefully", "care", "carefulness"], 
+        c: 1, 
+        e: "'Carefully' is adverb (modifies verb 'drives' - HOW he drives).",
+        t: "💡 Careful = adjective. Carefully = adverb.",
+        m: "⚠️ -ly form usually makes adverb from adjective."
+    },
+    { 
+        q: "Which is correct?", 
+        o: ["She sings beautiful", "She sings beautifully", "She beautiful sings", "She is beautifully"], 
+        c: 1, 
+        e: "'Beautifully' is adverb (modifies verb 'sings').",
+        t: "💡 Verb + adverb (sings beautifully, walks slowly).",
+        m: "⚠️ Need adverb to describe HOW the action is done."
+    },
+    { 
+        q: "Complete: 'She is a _______ dancer.' (skill level)", 
+        o: ["good", "well", "goodly", "better"], 
+        c: 0, 
+        e: "'Good' is adjective (describes noun 'dancer').",
+        t: "💡 Good = adjective (good dancer, good idea). Well = adverb (dances well).",
+        m: "⚠️ 'Well' as adjective only means 'healthy': I feel well."
+    },
+    { 
+        q: "Complete: 'She dances _______.'", 
+        o: ["good", "well", "goodly", "best"], 
+        c: 1, 
+        e: "'Well' is adverb (modifies verb 'dances' - HOW she dances).",
+        t: "💡 Well = adverb of 'good'. Good (adj) → Well (adv).",
+        m: "⚠️ 'Dances good' is common in speech but grammatically wrong."
+    },
+    { 
+        q: "Complete: 'He runs _______.' (at high speed)", 
+        o: ["fast", "fastly", "faster", "fastest"], 
+        c: 0, 
+        e: "'Fast' is adverb (irregular - no -ly form).",
+        t: "💡 Some adverbs don't add -ly: fast, hard, late, early, far.",
+        m: "⚠️ 'Fastly' doesn't exist. 'Fast' is both adjective and adverb."
+    },
+    { 
+        q: "Which is WRONG?", 
+        o: ["She arrived late", "She is a late student", "She came lately", "She was late"], 
+        c: 2, 
+        e: "'Lately' means 'recently', not 'not on time'. Should be: 'She came late'.",
+        t: "💡 Late = not on time (adj/adv). Lately = recently (adv).",
+        m: "⚠️ Different meanings: late vs lately."
+    },
+    { 
+        q: "Complete: 'I _______ finished my work.' (a short time ago)", 
+        o: ["near", "nearly", "close", "closely"], 
+        c: 1, 
+        e: "'Nearly' = almost (adverb of degree).",
+        t: "💡 Nearly/almost = adverbs meaning 'not quite, close to'.",
+        m: "⚠️ Near = close (distance). Nearly = almost."
+    },
+    { 
+        q: "Complete: 'She speaks _______ three languages.'", 
+        o: ["fluent", "fluently", "fluency", "most fluent"], 
+        c: 1, 
+        e: "'Fluently' modifies verb 'speaks'.",
+        t: "💡 Speaks + adverb (speaks fluently, clearly, loudly).",
+        m: "⚠️ After verbs, use adverbs (not adjectives)."
+    },
+    { 
+        q: "Which needs an adverb?", 
+        o: ["She is happy", "She is a happy girl", "She smiled happily", "She seems happy"], 
+        c: 2, 
+        e: "'Smiled happily' - adverb 'happily' modifies action verb 'smiled'.",
+        t: "💡 Action verbs need adverbs. Linking verbs need adjectives.",
+        m: "⚠️ Is, seems = linking verbs (+ adjective). Smiled = action verb (+ adverb)."
+    },
+    { 
+        q: "Complete: 'He _______ comes to class on time.' (not often)", 
+        o: ["rare", "rarely", "rareness", "rarer"], 
+        c: 1, 
+        e: "'Rarely' is adverb of frequency (modifies verb 'comes').",
+        t: "💡 Adverbs of frequency: always, usually, often, sometimes, rarely, never.",
+        m: "⚠️ These go before main verbs (rarely comes) but after BE (is rarely late)."
+    },
+    { 
+        q: "Complete: 'The children played _______ in the park.'", 
+        o: ["happy", "happily", "happiness", "happier"], 
+        c: 1, 
+        e: "'Happily' is adverb (modifies verb 'played').",
+        t: "💡 Happy (adj) → Happily (adv). Add -ly.",
+        m: "⚠️ When adjective ends in -y, change to -i before adding -ly."
+    },
+    { 
+        q: "Complete: 'She is _______ tired after work.' (very)", 
+        o: ["extreme", "extremely", "extremeness", "more extreme"], 
+        c: 1, 
+        e: "'Extremely' is adverb (modifies adjective 'tired').",
+        t: "💡 Adverb + adjective: very tired, extremely hot, incredibly fast.",
+        m: "⚠️ Use adverbs to modify adjectives."
+    },
+    { 
+        q: "Which is correct?", 
+        o: ["She talks quiet", "She talks quietly", "She is quietly", "She quiet talks"], 
+        c: 1, 
+        e: "'Quietly' is adverb (modifies verb 'talks').",
+        t: "💡 Quiet = adjective. Quietly = adverb.",
+        m: "⚠️ Talks is action verb, needs adverb."
+    },
+    { 
+        q: "Complete: 'I can _______ wait for the vacation.' (almost not)", 
+        o: ["hard", "hardly", "harder", "hardness"], 
+        c: 1, 
+        e: "'Hardly' means 'almost not' (adverb).",
+        t: "💡 Hardly = almost not. Hard = with effort OR difficult.",
+        m: "⚠️ Completely different meanings despite similar spelling."
+    },
+    { 
+        q: "Complete: 'He answered the question _______.'", 
+        o: ["correct", "correctly", "correction", "corrected"], 
+        c: 1, 
+        e: "'Correctly' is adverb (modifies verb 'answered').",
+        t: "💡 Correct (adj) → Correctly (adv).",
+        m: "⚠️ After action verbs, use adverbs."
+    }
+];
+
+    /* ============================================================
+       BAGIAN 2: LOGIKA SISTEM (JANGAN DIEDIT KECUALI PAHAM)
+       ============================================================ */
+    
+    let currentQuestions = [];
+    let currentIdx = 0;
+    let score = 0;
+    let timer;
+    let timeLeft = TIME_LIMIT;
+    let answered = false;
+
+    function init() {
+        document.getElementById('display-topic').innerText = TOPIC_TITLE;
+        // Acak soal dan ambil sebanyak TOTAL_TO_SHOW
+        currentQuestions = pool.sort(() => 0.5 - Math.random()).slice(0, TOTAL_TO_SHOW);
+        startTimer();
+        showQuestion();
+    }
+
+    function startTimer() {
+        timer = setInterval(() => {
+            timeLeft--;
+            let m = Math.floor(timeLeft/60);
+            let s = timeLeft % 60;
+            document.getElementById('timer').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+            if(timeLeft <= 0) finish();
+        }, 1000);
+    }
+
+    function showQuestion() {
+        answered = false;
+        document.getElementById('next-btn').style.display = 'none';
+        document.getElementById('feedback-panel').style.display = 'none';
+        const q = currentQuestions[currentIdx];
+        
+        document.getElementById('progress-bar').style.width = (currentIdx / TOTAL_TO_SHOW * 100) + "%";
+        document.getElementById('q-text').innerText = `${currentIdx + 1}. ${q.q}`;
+        
+        const opts = document.getElementById('options');
+        opts.innerHTML = '';
+        q.o.forEach((o, i) => {
+            const b = document.createElement('button');
+            b.className = 'opt-btn';
+            b.innerText = o;
+            b.onclick = () => check(i, b);
+            opts.appendChild(b);
+        });
+    }
+
+    function check(idx, btn) {
+        if(answered) return;
+        answered = true;
+        const q = currentQuestions[currentIdx];
+        const all = document.querySelectorAll('.opt-btn');
+
+        if(idx === q.c) {
+            score++;
+            btn.classList.add('correct');
+            showFeedback("CORRECT", q.e);
+        } else {
+            btn.classList.add('wrong');
+            all[q.c].classList.add('correct');
+            showFeedback("INCORRECT", q.e);
+        }
+        document.getElementById('next-btn').style.display = 'block';
+    }
+
+    function showFeedback(status, text) {
+        const p = document.getElementById('feedback-panel');
+        document.getElementById('feedback-status').innerText = status;
+        document.getElementById('feedback-status').style.color = (status === "CORRECT") ? "var(--success)" : "var(--error)";
+        document.getElementById('feedback-desc').innerText = text;
+        p.style.display = 'block';
+    }
+
+    function goNext() {
+        currentIdx++;
+        if(currentIdx < TOTAL_TO_SHOW) showQuestion();
+        else finish();
+    }
+
+    function finish() {
+        clearInterval(timer);
+        document.getElementById('main-quiz').style.display = 'none';
+        document.getElementById('results').style.display = 'block';
+        document.getElementById('final-score').innerText = `${score}/${TOTAL_TO_SHOW}`;
+        
+        let msg = "";
+        let grade = "";
+        let percent = Math.round((score / TOTAL_TO_SHOW) * 100);
+
+        if(percent >= 85) { msg = "Excellent Work! Mastery Achieved."; grade = "A"; }
+        else if(percent >= 70) { msg = "Good Job! A bit more practice and you'll be perfect."; grade = "B"; }
+        else { msg = "Keep Practicing. Review the explanations to improve."; grade = "C"; }
+        
+        document.getElementById('rank-msg').innerText = msg;
+
+        setTimeout(() => {
+            if (typeof finishQuiz === "function") {
+                finishQuiz(percent, score, TOTAL_TO_SHOW, grade, msg, TOPIC_KEY);
+            }
+        }, 3000); 
+    }
+
+    init();
+</script>
+</body>
+</html>

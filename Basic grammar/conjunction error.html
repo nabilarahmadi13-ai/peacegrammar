@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise - Grammar Peace</title>
+    <style>
+        :root {
+            --bg-color: #0a0e14;
+            --card-bg: #161b22;
+            --text-main: #c9d1d9;
+            --accent: #58a6ff;
+            --success: #2ea043;
+            --error: #da3633;
+            --border: #30363d;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .top-nav {
+            width: 100%;
+            max-width: 750px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .btn-back {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+        }
+
+        .btn-back:hover { background: #30363d; border-color: var(--accent); }
+
+        #quiz-wrapper {
+            background: var(--card-bg);
+            max-width: 750px;
+            width: 100%;
+            padding: 35px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .header h1 { font-size: 1.4rem; color: var(--accent); margin: 0; text-transform: uppercase; }
+        #timer { font-family: monospace; font-size: 1.2rem; color: #ffa657; }
+
+        .progress-container { height: 4px; background: #21262d; margin-bottom: 25px; }
+        #progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
+
+        .question-box { margin-bottom: 30px; }
+        .question-text { font-size: 1.2rem; margin-bottom: 20px; line-height: 1.5; }
+
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+
+        .opt-btn {
+            background: #21262d;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 15px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+
+        .opt-btn:hover:not(:disabled) { background: #30363d; border-color: #8b949e; }
+        .opt-btn.correct { background: var(--success) !important; color: white; }
+        .opt-btn.wrong { background: var(--error) !important; color: white; }
+
+        #feedback-panel {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 6px;
+            background: #0d1117;
+            border-left: 4px solid var(--accent);
+            display: none;
+        }
+
+        .feedback-exp { font-size: 0.95rem; color: #8b949e; margin-top: 8px; }
+
+        .btn-nav {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            float: right;
+            margin-top: 20px;
+            display: none;
+        }
+
+        #results { display: none; text-align: center; }
+        .score-circle { font-size: 3rem; color: var(--accent); margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+<div class="top-nav">
+    <button class="btn-back" onclick="window.location.href='../index.html'">
+        🏠 Back to Levels
+    </button>
+</div>
+
+<div id="quiz-wrapper">
+    <div id="main-quiz">
+        <div class="header">
+            <!-- EDIT DI SINI: JUDUL TOPIK -->
+            <h1 id="display-topic">TOPIC NAME</h1>
+            <div id="timer">05:00</div>
+        </div>
+
+        <div class="progress-container"><div id="progress-bar"></div></div>
+
+        <div class="question-box">
+            <div id="q-text" class="question-text"></div>
+            <div id="options" class="options-grid"></div>
+        </div>
+
+        <div id="feedback-panel">
+            <div id="feedback-status" style="font-weight:bold"></div>
+            <div id="feedback-desc" class="feedback-exp"></div>
+        </div>
+
+        <button id="next-btn" class="btn-nav" onclick="goNext()">NEXT QUESTION</button>
+    </div>
+
+    <div id="results">
+        <h1>EXAM COMPLETE</h1>
+        <div class="score-circle" id="final-score">0/0</div>
+        <p id="rank-msg" style="margin-bottom: 20px;"></p>
+        <p style="color: var(--accent); font-size: 0.9rem;">Redirecting to Performance Report...</p>
+    </div>
+</div>
+
+<script src="../app.js"></script>
+
+<script>
+    /* ============================================================
+       BAGIAN 1: KONFIGURASI SOAL (EDIT DI SINI)
+       ============================================================ */
+    
+    const TOPIC_TITLE = "Mastering Conjunction"; // Ganti Judul
+    const TOPIC_KEY = "conjunction error"; // HARUS SAMA dengan nama di TOPICS app.js
+    const TIME_LIMIT = 300; // Dalam detik (300 = 5 menit)
+    const TOTAL_TO_SHOW = 20; // Jumlah soal yang ditampilkan (misal dari 20 soal, ambil 10 acak)
+const pool = [
+    { 
+        q: "I like pizza, and I don't like pasta.",
+        o: ["I like pizza", "and", "I don't like pasta", "No Error"],
+        c: 1,
+        e: "Shows contrast, not addition. Should be: 'but I don't like pasta'.",
+        t: "💡 And = addition/similarity. But = contrast.",
+        m: "⚠️ Like vs don't like = contrast (use 'but')."
+    },
+    { 
+        q: "She was tired, but she went to bed early.",
+        o: ["She was tired", "but", "she went to bed early", "No Error"],
+        c: 1,
+        e: "This is result, not contrast. Should be: 'so she went to bed early'.",
+        t: "💡 So = result. But = contrast/unexpected.",
+        m: "⚠️ Tired causing sleep = result (use 'so'). Going despite being tired = contrast (use 'but')."
+    },
+    { 
+        q: "Study hard, and you will fail the exam.",
+        o: ["Study hard", "and", "you will fail", "No Error"],
+        c: 1,
+        e: "Shows negative consequence. Should be: 'or you will fail' (if you don't study).",
+        t: "💡 Command + or = negative consequence. Command + and = positive result.",
+        m: "⚠️ 'Study hard and you'll pass' (positive). 'Study hard or you'll fail' (negative)."
+    },
+    { 
+        q: "He didn't call and send a message.",
+        o: ["He didn't call", "and send", "a message", "No Error"],
+        c: 1,
+        e: "After negative, use 'or' (not 'and'). Should be: 'didn't call or send'.",
+        t: "💡 Negative + or (he did neither action).",
+        m: "⚠️ In negatives: use 'or' not 'and'."
+    },
+    { 
+        q: "I wanted to help, so I was too busy.",
+        o: ["I wanted to help", "so", "I was too busy", "No Error"],
+        c: 1,
+        e: "Shows contrast, not result. Should be: 'but I was too busy'.",
+        t: "💡 So = result. But = contrast.",
+        m: "⚠️ Wanting vs obstacle = contrast."
+    },
+    { 
+        q: "She is young, or she is very smart.",
+        o: ["She is young", "or", "she is very smart", "No Error"],
+        c: 1,
+        e: "Not a choice. Should be: 'but/yet she is very smart' (contrast).",
+        t: "💡 Or = choice or alternative. But/Yet = contrast.",
+        m: "⚠️ Young + smart = unexpected combination = contrast."
+    },
+    { 
+        q: "It was late, or we decided to go home.",
+        o: ["It was late", "or", "we decided to go home", "No Error"],
+        c: 1,
+        e: "Shows result. Should be: 'so we decided to go home'.",
+        t: "💡 So = result/consequence.",
+        m: "⚠️ Being late caused decision to go home."
+    },
+    { 
+        q: "Would you like tea and coffee?",
+        o: ["Would you like", "tea and coffee", "No Error", "No Error"],
+        c: 1,
+        e: "Asking for choice. Should be: 'tea or coffee?' (choose one).",
+        t: "💡 Or = choice between alternatives.",
+        m: "⚠️ 'Tea and coffee' means both together."
+    },
+    { 
+        q: "Although it was raining, but we went out.",
+        o: ["Although it was raining", "but", "we went out", "No Error"],
+        c: 1,
+        e: "Can't use 'although' and 'but' together. Remove 'but': 'Although it was raining, we went out.'",
+        t: "💡 Although = subordinating conjunction. But = coordinating. Use ONE, not both.",
+        m: "⚠️ Very common error - using two contrast words."
+    },
+    { 
+        q: "Because he was tired, so he slept early.",
+        o: ["Because he was tired", "so", "he slept early", "No Error"],
+        c: 1,
+        e: "Can't use 'because' and 'so' together. Say: 'Because he was tired, he slept' OR 'He was tired, so he slept'.",
+        t: "💡 Because = subordinating. So = coordinating. Don't use both.",
+        m: "⚠️ Choose one: because (reason) OR so (result)."
+    },
+    { 
+        q: "He is smart, and lazy.",
+        o: ["He is smart", "and lazy", "No Error", "No Error"],
+        c: 1,
+        e: "Shows contrast. Should be: 'but lazy' OR 'yet lazy'.",
+        t: "💡 Smart vs lazy = opposite qualities = contrast (use 'but').",
+        m: "⚠️ And suggests both are similar - but these are opposites."
+    },
+    { 
+        q: "She can sing nor dance.",
+        o: ["She can", "sing nor dance", "No Error", "No Error"],
+        c: 1,
+        e: "'Nor' needs negative before it. Should be: 'sing or dance' OR 'She can't sing, nor can she dance'.",
+        t: "💡 Nor comes after negative statement with inverted word order.",
+        m: "⚠️ Nor requires negative first + inversion."
+    },
+    { 
+        q: "Come here, and I will punish you.",
+        o: ["Come here", "and", "I will punish you", "No Error"],
+        c: 1,
+        e: "Negative consequence needs 'or'. Should be: 'or I will punish you'.",
+        t: "💡 Command + and = positive result. Command + or = negative consequence.",
+        m: "⚠️ Punishment is negative → use 'or'."
+    },
+    { 
+        q: "I don't have time, and money for vacation.",
+        o: ["I don't have", "time, and money", "for vacation", "No Error"],
+        c: 1,
+        e: "After negative, use 'or'. Should be: 'time or money' (don't have either).",
+        t: "💡 Negative sentence: use 'or' not 'and'.",
+        m: "⚠️ Don't have A or B = have neither."
+    },
+    { 
+        q: "She loves dancing, or her sister does too.",
+        o: ["She loves dancing", "or", "her sister does too", "No Error"],
+        c: 1,
+        e: "Both love dancing (addition). Should be: 'and her sister does too' OR 'and so does her sister'.",
+        t: "💡 Or = choice. And = addition (both share the characteristic).",
+        m: "⚠️ 'Too' indicates addition, not choice."
+    },
+    { 
+        q: "He failed the test, or he didn't study.",
+        o: ["He failed", "or", "he didn't study", "No Error"],
+        c: 1,
+        e: "Shows reason/cause. Should be: 'for he didn't study' OR 'because he didn't study'.",
+        t: "💡 For = because (formal conjunction showing reason).",
+        m: "⚠️ Not studying caused failure = reason (use 'for' or 'because')."
+    },
+    { 
+        q: "She is talented, so she is hardworking.",
+        o: ["She is talented", "so", "she is hardworking", "No Error"],
+        c: 1,
+        e: "Both are positive qualities (addition). Should be: 'and she is hardworking'.",
+        t: "💡 So = result. And = addition of similar things.",
+        m: "⚠️ These are both good qualities, not cause-effect."
+    },
+    { 
+        q: "Take your medicine, and you won't get better.",
+        o: ["Take your medicine", "and", "you won't get better", "No Error"],
+        c: 1,
+        e: "Negative consequence needs 'or'. Should be: 'or you won't get better' (if you don't take it).",
+        t: "💡 Command + and = positive result. Command + or = what happens if you don't.",
+        m: "⚠️ Won't get better = negative → use 'or'."
+    },
+    { 
+        q: "I invited him, so he didn't come.",
+        o: ["I invited him", "so", "he didn't come", "No Error"],
+        c: 1,
+        e: "Shows contrast. Should be: 'but he didn't come' (unexpected - invited but didn't come).",
+        t: "💡 So = result. But = contrast/unexpected.",
+        m: "⚠️ Expected: he would come. Reality: didn't come = contrast."
+    },
+    { 
+        q: "She must apologize, and she will lose her job.",
+        o: ["She must apologize", "and", "she will lose her job", "No Error"],
+        c: 1,
+        e: "Negative consequence. Should be: 'or she will lose her job' (if she doesn't apologize).",
+        t: "💡 Must + or = shows what happens if you don't do something.",
+        m: "⚠️ Losing job is consequence of NOT apologizing."
+    }
+];
+
+    /* ============================================================
+       BAGIAN 2: LOGIKA SISTEM (JANGAN DIEDIT KECUALI PAHAM)
+       ============================================================ */
+    
+    let currentQuestions = [];
+    let currentIdx = 0;
+    let score = 0;
+    let timer;
+    let timeLeft = TIME_LIMIT;
+    let answered = false;
+
+    function init() {
+        document.getElementById('display-topic').innerText = TOPIC_TITLE;
+        // Acak soal dan ambil sebanyak TOTAL_TO_SHOW
+        currentQuestions = pool.sort(() => 0.5 - Math.random()).slice(0, TOTAL_TO_SHOW);
+        startTimer();
+        showQuestion();
+    }
+
+    function startTimer() {
+        timer = setInterval(() => {
+            timeLeft--;
+            let m = Math.floor(timeLeft/60);
+            let s = timeLeft % 60;
+            document.getElementById('timer').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+            if(timeLeft <= 0) finish();
+        }, 1000);
+    }
+
+    function showQuestion() {
+        answered = false;
+        document.getElementById('next-btn').style.display = 'none';
+        document.getElementById('feedback-panel').style.display = 'none';
+        const q = currentQuestions[currentIdx];
+        
+        document.getElementById('progress-bar').style.width = (currentIdx / TOTAL_TO_SHOW * 100) + "%";
+        document.getElementById('q-text').innerText = `${currentIdx + 1}. ${q.q}`;
+        
+        const opts = document.getElementById('options');
+        opts.innerHTML = '';
+        q.o.forEach((o, i) => {
+            const b = document.createElement('button');
+            b.className = 'opt-btn';
+            b.innerText = o;
+            b.onclick = () => check(i, b);
+            opts.appendChild(b);
+        });
+    }
+
+    function check(idx, btn) {
+        if(answered) return;
+        answered = true;
+        const q = currentQuestions[currentIdx];
+        const all = document.querySelectorAll('.opt-btn');
+
+        if(idx === q.c) {
+            score++;
+            btn.classList.add('correct');
+            showFeedback("CORRECT", q.e);
+        } else {
+            btn.classList.add('wrong');
+            all[q.c].classList.add('correct');
+            showFeedback("INCORRECT", q.e);
+        }
+        document.getElementById('next-btn').style.display = 'block';
+    }
+
+    function showFeedback(status, text) {
+        const p = document.getElementById('feedback-panel');
+        document.getElementById('feedback-status').innerText = status;
+        document.getElementById('feedback-status').style.color = (status === "CORRECT") ? "var(--success)" : "var(--error)";
+        document.getElementById('feedback-desc').innerText = text;
+        p.style.display = 'block';
+    }
+
+    function goNext() {
+        currentIdx++;
+        if(currentIdx < TOTAL_TO_SHOW) showQuestion();
+        else finish();
+    }
+
+    function finish() {
+        clearInterval(timer);
+        document.getElementById('main-quiz').style.display = 'none';
+        document.getElementById('results').style.display = 'block';
+        document.getElementById('final-score').innerText = `${score}/${TOTAL_TO_SHOW}`;
+        
+        let msg = "";
+        let grade = "";
+        let percent = Math.round((score / TOTAL_TO_SHOW) * 100);
+
+        if(percent >= 85) { msg = "Excellent Work! Mastery Achieved."; grade = "A"; }
+        else if(percent >= 70) { msg = "Good Job! A bit more practice and you'll be perfect."; grade = "B"; }
+        else { msg = "Keep Practicing. Review the explanations to improve."; grade = "C"; }
+        
+        document.getElementById('rank-msg').innerText = msg;
+
+        setTimeout(() => {
+            if (typeof finishQuiz === "function") {
+                finishQuiz(percent, score, TOTAL_TO_SHOW, grade, msg, TOPIC_KEY);
+            }
+        }, 3000); 
+    }
+
+    init();
+</script>
+</body>
+</html>

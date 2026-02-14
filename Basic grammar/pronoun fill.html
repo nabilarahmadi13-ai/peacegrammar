@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise - Grammar Peace</title>
+    <style>
+        :root {
+            --bg-color: #0a0e14;
+            --card-bg: #161b22;
+            --text-main: #c9d1d9;
+            --accent: #58a6ff;
+            --success: #2ea043;
+            --error: #da3633;
+            --border: #30363d;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .top-nav {
+            width: 100%;
+            max-width: 750px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .btn-back {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+        }
+
+        .btn-back:hover { background: #30363d; border-color: var(--accent); }
+
+        #quiz-wrapper {
+            background: var(--card-bg);
+            max-width: 750px;
+            width: 100%;
+            padding: 35px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .header h1 { font-size: 1.4rem; color: var(--accent); margin: 0; text-transform: uppercase; }
+        #timer { font-family: monospace; font-size: 1.2rem; color: #ffa657; }
+
+        .progress-container { height: 4px; background: #21262d; margin-bottom: 25px; }
+        #progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
+
+        .question-box { margin-bottom: 30px; }
+        .question-text { font-size: 1.2rem; margin-bottom: 20px; line-height: 1.5; }
+
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+
+        .opt-btn {
+            background: #21262d;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 15px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+
+        .opt-btn:hover:not(:disabled) { background: #30363d; border-color: #8b949e; }
+        .opt-btn.correct { background: var(--success) !important; color: white; }
+        .opt-btn.wrong { background: var(--error) !important; color: white; }
+
+        #feedback-panel {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 6px;
+            background: #0d1117;
+            border-left: 4px solid var(--accent);
+            display: none;
+        }
+
+        .feedback-exp { font-size: 0.95rem; color: #8b949e; margin-top: 8px; }
+
+        .btn-nav {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            float: right;
+            margin-top: 20px;
+            display: none;
+        }
+
+        #results { display: none; text-align: center; }
+        .score-circle { font-size: 3rem; color: var(--accent); margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+<div class="top-nav">
+    <button class="btn-back" onclick="window.location.href='../index.html'">
+        🏠 Back to Levels
+    </button>
+</div>
+
+<div id="quiz-wrapper">
+    <div id="main-quiz">
+        <div class="header">
+            <!-- EDIT DI SINI: JUDUL TOPIK -->
+            <h1 id="display-topic">TOPIC NAME</h1>
+            <div id="timer">05:00</div>
+        </div>
+
+        <div class="progress-container"><div id="progress-bar"></div></div>
+
+        <div class="question-box">
+            <div id="q-text" class="question-text"></div>
+            <div id="options" class="options-grid"></div>
+        </div>
+
+        <div id="feedback-panel">
+            <div id="feedback-status" style="font-weight:bold"></div>
+            <div id="feedback-desc" class="feedback-exp"></div>
+        </div>
+
+        <button id="next-btn" class="btn-nav" onclick="goNext()">NEXT QUESTION</button>
+    </div>
+
+    <div id="results">
+        <h1>EXAM COMPLETE</h1>
+        <div class="score-circle" id="final-score">0/0</div>
+        <p id="rank-msg" style="margin-bottom: 20px;"></p>
+        <p style="color: var(--accent); font-size: 0.9rem;">Redirecting to Performance Report...</p>
+    </div>
+</div>
+
+<script src="../app.js"></script>
+
+<script>
+    /* ============================================================
+       BAGIAN 1: KONFIGURASI SOAL (EDIT DI SINI)
+       ============================================================ */
+    
+    const TOPIC_TITLE = "Mastering Pronouns"; // Ganti Judul
+    const TOPIC_KEY = "pronoun fill"; // HARUS SAMA dengan nama di TOPICS app.js
+    const TIME_LIMIT = 300; // Dalam detik (300 = 5 menit)
+    const TOTAL_TO_SHOW = 20; // Jumlah soal yang ditampilkan (misal dari 20 soal, ambil 10 acak)
+const pool = [
+    { 
+        q: "Choose the correct pronoun: 'The gift is for _______ and me.'", 
+        o: ["he", "him", "his", "himself"], 
+        c: 1, 
+        e: "After preposition 'for', use object pronoun 'him' (not subject 'he').",
+        t: "💡 After prepositions (for, with, to, from), use object pronouns: me, him, her, us, them.",
+        m: "⚠️ Don't use subject pronouns (I, he, she) after prepositions."
+    },
+    { 
+        q: "'This book is _______' (belongs to me)", 
+        o: ["my", "mine", "me", "myself"], 
+        c: 1, 
+        e: "'Mine' is possessive pronoun (replaces 'my book').",
+        t: "💡 Possessive adjectives: my, your, his, her, our, their. Possessive pronouns: mine, yours, his, hers, ours, theirs.",
+        m: "⚠️ Possessive pronouns stand alone (no noun after). Possessive adjectives need noun."
+    },
+    { 
+        q: "Reflexive pronoun: 'She made the cake _______'", 
+        o: ["herself", "her", "hers", "she"], 
+        c: 0, 
+        e: "'Herself' shows she did it alone (reflexive pronoun).",
+        t: "💡 Reflexive: myself, yourself, himself, herself, itself, ourselves, yourselves, themselves.",
+        m: "⚠️ Use reflexive when subject = object OR for emphasis."
+    },
+    { 
+        q: "'They helped _______ with the homework.'", 
+        o: ["each other", "themselves", "them", "their"], 
+        c: 0, 
+        e: "'Each other' shows reciprocal action (they helped one another).",
+        t: "💡 Reciprocal pronouns: each other (2 people), one another (3+ people).",
+        m: "⚠️ Each other = mutual action. Themselves = individual reflexive."
+    },
+    { 
+        q: "'_______ came to the party.' (unknown people)", 
+        o: ["Anyone", "Someone", "Everyone", "No one"], 
+        c: 1, 
+        e: "'Someone' = indefinite pronoun (unknown specific person came).",
+        t: "💡 Indefinite pronouns: someone, anyone, everyone, no one, somebody, anybody, everybody, nobody.",
+        m: "⚠️ These pronouns are SINGULAR (use 'is', 'has', 'was')."
+    },
+    { 
+        q: "Complete: 'My sister and _______ went shopping.'", 
+        o: ["me", "I", "myself", "mine"], 
+        c: 1, 
+        e: "'I' is subject pronoun (doing the action of going).",
+        t: "💡 Test: Remove 'My sister and' - would you say 'Me went' or 'I went'?",
+        m: "⚠️ Common error: 'Me and my sister' should be 'My sister and I' (subject position)."
+    },
+    { 
+        q: "'Is this pen _______?' (belongs to you)", 
+        o: ["your", "yours", "you", "yourself"], 
+        c: 1, 
+        e: "'Yours' = possessive pronoun (stands alone).",
+        t: "💡 Your + noun ('your pen'). Yours alone ('Is it yours?').",
+        m: "⚠️ Don't say 'your's' - no apostrophe in possessive pronouns."
+    },
+    { 
+        q: "'The cat hurt _______ when it fell.'", 
+        o: ["itself", "it", "its", "it's"], 
+        c: 0, 
+        e: "'Itself' = reflexive pronoun (subject and object are same - the cat).",
+        t: "💡 Itself = reflexive for 'it'. It's = it is (contraction).",
+        m: "⚠️ Its = possessive (its tail). It's = it is. Itself = reflexive."
+    },
+    { 
+        q: "'_______ has forgotten their umbrella.'", 
+        o: ["Anyone", "Someone", "No one", "Everyone"], 
+        c: 1, 
+        e: "'Someone' = indefinite (one unknown person).",
+        t: "💡 Modern English allows 'their' with singular indefinite pronouns (someone, anyone, everyone).",
+        m: "⚠️ Traditionally 'his/her' but 'their' is now widely accepted as gender-neutral."
+    },
+    { 
+        q: "Choose correct: 'Between you and _______'", 
+        o: ["I", "me", "myself", "mine"], 
+        c: 1, 
+        e: "After preposition 'between', use object pronoun 'me'.",
+        t: "💡 Between = preposition → use object pronouns (me, him, her, us, them).",
+        m: "⚠️ Common error: 'between you and I' should be 'between you and me'."
+    },
+    { 
+        q: "'We should be proud of _______.'", 
+        o: ["us", "ourselves", "we", "our"], 
+        c: 1, 
+        e: "'Ourselves' = reflexive (we should be proud of us = ourselves).",
+        t: "💡 After prepositions, check if subject = object. If yes, use reflexive.",
+        m: "⚠️ 'Proud of ourselves' (reflexive) vs 'gave it to us' (not reflexive - different people)."
+    },
+    { 
+        q: "'The students helped _______ during the exam.' (mutual help)", 
+        o: ["each other", "themselves", "them", "one another"], 
+        c: 3, 
+        e: "'One another' for multiple people helping mutually (3+ students).",
+        t: "💡 Each other = 2 people. One another = 3 or more people.",
+        m: "⚠️ In modern English, both are often used interchangeably."
+    },
+    { 
+        q: "'_______ knows the answer to this question.'", 
+        o: ["Anybody", "Nobody", "Somebody", "Everybody"], 
+        c: 1, 
+        e: "'Nobody knows' = no person knows (indefinite negative).",
+        t: "💡 Nobody/no one = negative indefinite pronoun.",
+        m: "⚠️ Nobody is singular: 'Nobody knows' (not 'know')."
+    },
+    { 
+        q: "'The manager _______ will attend the meeting.'", 
+        o: ["himself", "him", "his", "he"], 
+        c: 0, 
+        e: "'Himself' adds emphasis (the manager personally, not someone else).",
+        t: "💡 Reflexive pronouns can add emphasis: I myself, she herself, they themselves.",
+        m: "⚠️ Emphatic use: optional, just for emphasis."
+    },
+    { 
+        q: "'These books are _______.' (belong to us)", 
+        o: ["our", "ours", "us", "ourselves"], 
+        c: 1, 
+        e: "'Ours' = possessive pronoun (our books = ours).",
+        t: "💡 Our + noun. Ours alone (stands without noun).",
+        m: "⚠️ Never 'our's' - no apostrophe."
+    },
+    { 
+        q: "'Did you do this _______?' (alone)", 
+        o: ["yourself", "you", "your", "yours"], 
+        c: 0, 
+        e: "'Yourself' = reflexive (you did it, not someone else helped).",
+        t: "💡 By + reflexive pronoun = alone (by myself, by yourself, by himself).",
+        m: "⚠️ 'By yourself' = alone. 'Yourself' after verb = emphasis or reflexive."
+    },
+    { 
+        q: "'_______ called while you were out.'", 
+        o: ["Anyone", "Someone", "Everyone", "No one"], 
+        c: 1, 
+        e: "'Someone' = one unknown person called.",
+        t: "💡 Someone = affirmative unknown person. Anyone = questions/negatives.",
+        m: "⚠️ In questions: 'Did anyone call?' In statements: 'Someone called.'"
+    },
+    { 
+        q: "'The decision is _______.' (we decide)", 
+        o: ["our", "ours", "us", "ourselves"], 
+        c: 1, 
+        e: "'Ours' = possessive pronoun (stands alone).",
+        t: "💡 'The decision is ours' (possessive pronoun). 'Our decision' (possessive adjective + noun).",
+        m: "⚠️ After verb 'is/are/was', use possessive pronoun (mine, yours, his, hers, ours, theirs)."
+    },
+    { 
+        q: "'John and _______ are best friends.' (I am his friend)", 
+        o: ["me", "I", "myself", "mine"], 
+        c: 1, 
+        e: "'I' = subject pronoun (John and I are friends - subject of 'are').",
+        t: "💡 Remove the other person's name to test: 'I am' not 'Me am'.",
+        m: "⚠️ Subject position (before verb) = I, he, she, we, they."
+    },
+    { 
+        q: "'They bought the house _______.' (without help)", 
+        o: ["themselves", "them", "their", "theirs"], 
+        c: 0, 
+        e: "'Themselves' = reflexive/emphatic (they did it alone).",
+        t: "💡 By themselves = without help. Themselves after verb = emphasis.",
+        m: "⚠️ Theirselves is WRONG - correct form is 'themselves'."
+    }
+];
+
+    /* ============================================================
+       BAGIAN 2: LOGIKA SISTEM (JANGAN DIEDIT KECUALI PAHAM)
+       ============================================================ */
+    
+    let currentQuestions = [];
+    let currentIdx = 0;
+    let score = 0;
+    let timer;
+    let timeLeft = TIME_LIMIT;
+    let answered = false;
+
+    function init() {
+        document.getElementById('display-topic').innerText = TOPIC_TITLE;
+        // Acak soal dan ambil sebanyak TOTAL_TO_SHOW
+        currentQuestions = pool.sort(() => 0.5 - Math.random()).slice(0, TOTAL_TO_SHOW);
+        startTimer();
+        showQuestion();
+    }
+
+    function startTimer() {
+        timer = setInterval(() => {
+            timeLeft--;
+            let m = Math.floor(timeLeft/60);
+            let s = timeLeft % 60;
+            document.getElementById('timer').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+            if(timeLeft <= 0) finish();
+        }, 1000);
+    }
+
+    function showQuestion() {
+        answered = false;
+        document.getElementById('next-btn').style.display = 'none';
+        document.getElementById('feedback-panel').style.display = 'none';
+        const q = currentQuestions[currentIdx];
+        
+        document.getElementById('progress-bar').style.width = (currentIdx / TOTAL_TO_SHOW * 100) + "%";
+        document.getElementById('q-text').innerText = `${currentIdx + 1}. ${q.q}`;
+        
+        const opts = document.getElementById('options');
+        opts.innerHTML = '';
+        q.o.forEach((o, i) => {
+            const b = document.createElement('button');
+            b.className = 'opt-btn';
+            b.innerText = o;
+            b.onclick = () => check(i, b);
+            opts.appendChild(b);
+        });
+    }
+
+    function check(idx, btn) {
+        if(answered) return;
+        answered = true;
+        const q = currentQuestions[currentIdx];
+        const all = document.querySelectorAll('.opt-btn');
+
+        if(idx === q.c) {
+            score++;
+            btn.classList.add('correct');
+            showFeedback("CORRECT", q.e);
+        } else {
+            btn.classList.add('wrong');
+            all[q.c].classList.add('correct');
+            showFeedback("INCORRECT", q.e);
+        }
+        document.getElementById('next-btn').style.display = 'block';
+    }
+
+    function showFeedback(status, text) {
+        const p = document.getElementById('feedback-panel');
+        document.getElementById('feedback-status').innerText = status;
+        document.getElementById('feedback-status').style.color = (status === "CORRECT") ? "var(--success)" : "var(--error)";
+        document.getElementById('feedback-desc').innerText = text;
+        p.style.display = 'block';
+    }
+
+    function goNext() {
+        currentIdx++;
+        if(currentIdx < TOTAL_TO_SHOW) showQuestion();
+        else finish();
+    }
+
+    function finish() {
+        clearInterval(timer);
+        document.getElementById('main-quiz').style.display = 'none';
+        document.getElementById('results').style.display = 'block';
+        document.getElementById('final-score').innerText = `${score}/${TOTAL_TO_SHOW}`;
+        
+        let msg = "";
+        let grade = "";
+        let percent = Math.round((score / TOTAL_TO_SHOW) * 100);
+
+        if(percent >= 85) { msg = "Excellent Work! Mastery Achieved."; grade = "A"; }
+        else if(percent >= 70) { msg = "Good Job! A bit more practice and you'll be perfect."; grade = "B"; }
+        else { msg = "Keep Practicing. Review the explanations to improve."; grade = "C"; }
+        
+        document.getElementById('rank-msg').innerText = msg;
+
+        setTimeout(() => {
+            if (typeof finishQuiz === "function") {
+                finishQuiz(percent, score, TOTAL_TO_SHOW, grade, msg, TOPIC_KEY);
+            }
+        }, 3000); 
+    }
+
+    init();
+</script>
+</body>
+</html>

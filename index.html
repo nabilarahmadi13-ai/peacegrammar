@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GRAMMAR PEACE - English Lab</title>
+
+    <!-- PWA & Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0d6efd">
+    
+    <!-- Link Font & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --primary: #4f46e5;
+            --secondary: #ec4899;
+            --accent: #06b6d4;
+            --text-dark: #1e293b;
+            --text-light: #64748b;
+            --white: #ffffff;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        body { background: var(--bg); color: var(--text-dark); min-height: 100vh; overflow-x: hidden; }
+
+        /* HEADER (Logo Tengah) */
+        .main-header {
+            text-align: center;
+            padding: 40px 20px;
+            background: var(--white);
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .main-header img { width: 100px; height: auto; margin-bottom: 10px; }
+        .main-header h1 { font-size: 2rem; font-weight: 800; letter-spacing: 2px; color: var(--primary); }
+
+        .container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+        .hidden { display: none; }
+
+        /* VIEW: LANDING */
+        #view-landing { text-align: center; padding: 60px 20px; }
+        #view-landing h2 { font-size: 2.5rem; margin-bottom: 20px; }
+        #view-landing p { color: var(--text-light); font-size: 1.1rem; margin-bottom: 30px; }
+
+        /* VIEW: AUTH (Login & Register) */
+        .auth-card {
+            max-width: 400px;
+            margin: 0 auto;
+            background: var(--white);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+        }
+        input, select {
+            width: 100%; padding: 14px; margin-bottom: 15px;
+            border: 1px solid #e2e8f0; border-radius: 12px; outline: none;
+        }
+        input:focus { border-color: var(--primary); }
+
+        /* BUTTONS */
+        .btn {
+            display: inline-block; width: 100%; padding: 15px;
+            border-radius: 12px; border: none; font-weight: 700;
+            cursor: pointer; transition: 0.3s; text-align: center; text-decoration: none;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-2px); }
+        .btn-outline { background: transparent; color: var(--primary); border: 2px solid var(--primary); margin-top: 10px; }
+
+        /* VIEW: LEVELS (Setelah Login) */
+        /* 1. Mengetengahkan Container Grid di Halaman */
+.level-grid {
+    display: grid;
+    /* Membuat kolom otomatis sejajar */
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+    gap: 25px;
+    width: 100%;
+    max-width: 1100px;
+    margin: 40px auto; /* AUTO di kiri-kanan membuat container di tengah */
+    justify-content: center; /* Mengetengahkan kartu jika jumlahnya sedikit */
+    padding: 20px;
+}
+
+/* 2. Mengetengahkan Tulisan & Tombol di Dalam Kartu */
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    padding: 30px;
+    border-radius: 12px;
+    
+    /* Menggunakan Flexbox untuk mengetengahkan isi */
+    display: flex;
+    flex-direction: column;
+    align-items: center;    /* Mengetengahkan isi secara horizontal */
+    text-align: center;     /* Mengetengahkan teks (inline) */
+    justify-content: center; /* Mengetengahkan isi secara vertikal */
+    
+    transition: 0.3s;
+}
+
+/* Memastikan tombol tidak terlalu lebar dan tetap di tengah */
+.card .btn {
+    width: fit-content; 
+    margin-top: 15px;
+}       
+        /* TOPIC LIST VIEW */
+        .topic-list { display: flex; flex-direction: column; gap: 15px; }
+        .level-card { 
+            background: white; padding: 20px; border-radius: 15px; 
+            display: flex; align-items: center; cursor: pointer; border: 1px solid #e2e8f0;
+        }
+        .level-card:hover { background: #f1f5f9; }
+        
+        /* FOOTER (Pojok Kanan) */
+        footer {
+            margin-top: auto; padding: 30px 50px;
+            background: white; border-top: 1px solid #e2e8f0;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .social-media { display: flex; gap: 15px; }
+        .social-media a { 
+            color: var(--text-dark); font-size: 1.5rem; transition: 0.3s;
+        }
+        .social-media a:hover { color: var(--primary); }
+
+        /* SPINNER */
+        .spinner {
+            width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%; border-top-color: #fff; animation: spin 1s linear infinite;
+            display: inline-block; vertical-align: middle; margin-right: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 600px) {
+            footer { flex-direction: column-reverse; gap: 20px; text-align: center; }
+        }
+    .landing-content {
+        text-align: center;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 80px 20px;
+    }
+
+    .badge {
+        color: var(--accent);
+        letter-spacing: 2px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+        opacity: 0.8;
+    }
+
+    .hero-title {
+        font-size: clamp(2.2rem, 6vw, 3.8rem);
+        line-height: 1.1;
+        font-weight: 800;
+        color: #000000;
+        margin: 0 0 25px 0;
+    }
+
+    .accent-text {
+        color: var(--accent); /* Biru Solid (Tanpa Transparan) */
+        /* Memberikan efek dimensi halus agar tidak 'flat' */
+        text-shadow: 0 0 20px rgba(88, 166, 255, 0.3); 
+    }
+
+    .hero-subtitle {
+        font-size: 1.15rem;
+        color: #8b949e;
+        max-width: 550px;
+        margin: 0 auto 40px auto;
+        line-height: 1.6;
+    }
+
+    .landing-features {
+        display: flex;
+        justify-content: center;
+        gap: 25px;
+        margin-bottom: 50px;
+        color: #c9d1d9;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .main-cta {
+        padding: 20px 45px !important;
+        font-size: 1.1rem !important;
+        border-radius: 50px !important; /* Membuat kesan lebih modern/bulat */
+        display: inline-flex;
+        align-items: center;
+        gap: 15px;
+        transition: all 0.3s ease !important;
+        background: var(--accent);
+        color: rgb(255, 255, 255);
+        border: none;
+        cursor: pointer;
+    }
+
+    .main-cta:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 30px rgba(88, 166, 255, 0.25);
+    }
+
+    .btn-arrow {
+        font-size: 1.2rem;
+    }
+
+    .cta-note {
+        font-size: 0.85rem;
+        color: #484f58;
+        margin-top: 20px;
+    }
+
+    /* Animasi Halus */
+    #view-landing {
+        animation: slideUp 1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    /* ===== Decorative Glow ===== */
+
+.landing-decor{
+    position:absolute;
+    width:400px;
+    height:400px;
+    background: radial-gradient(circle, rgba(6,182,212,0.15), transparent);
+    top:50px;
+    right:0;
+    z-index:-1;
+}
+
+/* ===== Grid Layout ===== */
+
+.landing-grid{
+    display:grid;
+    grid-template-columns:1.1fr 0.9fr;
+    gap:50px;
+    align-items:center;
+}
+
+/* ===== Side Panel ===== */
+
+.landing-side-panel{
+    display:flex;
+    justify-content:center;
+}
+
+.side-card{
+    background: rgba(255,255,255,0.75);
+    backdrop-filter: blur(14px);
+    padding:30px;
+    border-radius:20px;
+    box-shadow:0 20px 40px rgba(0,0,0,0.06);
+    width:320px;
+}
+
+/* ===== Progress ===== */
+
+.side-progress{
+    margin-top:18px;
+}
+
+.side-progress span{
+    font-size:13px;
+    color:var(--text-light);
+}
+
+.progress-bar{
+    height:8px;
+    background:#e2e8f0;
+    border-radius:10px;
+    margin-top:6px;
+    overflow:hidden;
+}
+
+.progress-bar div{
+    height:100%;
+    background:var(--accent);
+}
+
+/* ===== Stats ===== */
+
+.side-stats{
+    display:flex;
+    justify-content:space-between;
+    margin-top:24px;
+}
+
+.stat strong{
+    display:block;
+    font-size:18px;
+    color:var(--accent);
+}
+
+.stat span{
+    font-size:12px;
+    color:var(--text-light);
+}
+/* ===== Responsive Landing ===== */
+
+@media (max-width: 900px){
+
+    .landing-grid{
+        grid-template-columns: 1fr;
+        gap:40px;
+    }
+
+    .landing-side-panel{
+        justify-content:center;
+    }
+
+    .side-card{
+        width:100%;
+        max-width:420px;
+    }
+
+}
+@media (max-width: 600px){
+
+    .landing-content{
+        padding:40px 10px;
+    }
+
+    .hero-subtitle{
+        font-size:1rem;
+    }
+
+    .landing-features{
+        flex-direction:column;
+        gap:10px;
+    }
+
+}
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <img src="round logo.png" alt="Logo">
+        <h1>GRAMMAR PEACE</h1>
+    </header>
+
+    <div class="container">
+        
+        <!-- 1. LANDING PAGE VIEW -->
+<div id="view-landing" class="view active">
+
+    <!-- Decorative Layer (tidak mengganggu layout lama) -->
+    <div class="landing-decor"></div>
+
+    <div class="landing-grid">
+
+        <!-- LEFT CONTENT -->
+        <div class="landing-content">
+
+            <div class="badge">Elevate Your Language Instinct</div>
+            
+            <h2 class="hero-title">
+                Precision in Every Sentence. <br>
+                <span class="accent-text">Clarity in Every Word.</span>
+            </h2>
+            
+            <p class="hero-subtitle">
+                Lupakan cara lama menghafal rumus yang membosankan. 
+                Masuki ekosistem latihan yang dirancang untuk membangun insting tata bahasa Anda secara alami dan sistematis.
+            </p>
+
+            <div class="landing-features">
+                <div class="feat-item">
+                    <span class="feat-icon">✦</span>
+                    <span>Advanced Structure</span>
+                </div>
+                <div class="feat-item">
+                    <span class="feat-icon">✦</span>
+                    <span>Interactive Feedback</span>
+                </div>
+                <div class="feat-item">
+                    <span class="feat-icon">✦</span>
+                    <span>TOEFL Standard</span>
+                </div>
+            </div>
+            
+            <div class="cta-wrapper">
+                <button class="btn btn-primary main-cta" onclick="navTo('view-auth-choice')">
+                    Mulai Latihan Sekarang
+                    <span class="btn-arrow">→</span>
+                </button>
+
+                <p class="cta-note">
+                    Tingkatkan skor Anda melalui 240+ modul kuis interaktif.
+                </p>
+            </div>
+
+        </div>
+
+        <!-- RIGHT INFO PANEL -->
+        <div class="landing-side-panel">
+
+            <div class="side-card">
+
+                <h4>Performance Insight</h4>
+
+                <p>
+                    Sistem latihan membantu membangun pola grammar secara bertahap melalui evaluasi performa dan progres pembelajaran personal.
+                </p>
+
+                <!-- Progress Style (anti flat element) -->
+                <div class="side-progress">
+                    <span>Grammar Accuracy</span>
+                    <div class="progress-bar">
+                        <div style="width:82%"></div>
+                    </div>
+                </div>
+
+                <div class="side-progress">
+                    <span>Structure Mastery</span>
+                    <div class="progress-bar">
+                        <div style="width:74%"></div>
+                    </div>
+                </div>
+
+                <div class="side-progress">
+                    <span>TOEFL Readiness</span>
+                    <div class="progress-bar">
+                        <div style="width:88%"></div>
+                    </div>
+                </div>
+
+                <div class="side-stats">
+    <div class="stat">
+        <strong>E</strong>
+        <span>Explanation</span>
+    </div>
+
+    <div class="stat">
+        <strong>T</strong>
+        <span>Smart Tips</span>
+    </div>
+
+    <div class="stat">
+        <strong>M</strong>
+        <span>Common Mistakes</span>
+    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+        <!-- 2. PILIHAN LOGIN / SIGNUP -->
+        <div id="view-auth-choice" class="view hidden" style="text-align: center;">
+            <div class="auth-card">
+                <h3>Selamat Datang</h3>
+                <p>Silakan masuk atau daftar.</p>
+                <button class="btn btn-primary" onclick="navTo('view-login')">Login</button>
+                <button class="btn btn-outline" onclick="navTo('view-signup')">Daftar Akun Baru</button>
+                <button class="btn-logout" style="background:none; border:none; margin-top:20px; cursor:pointer;" onclick="navTo('view-landing')">← Kembali</button>
+            </div>
+        </div>
+
+        <!-- 3. LOGIN FORM -->
+        <div id="view-login" class="view hidden">
+            <div class="auth-card">
+                <h3>Login</h3>
+                <p>Masukkan nama lengkap Anda sesuai pendaftaran.</p>
+                <input type="text" id="login-name" placeholder="Nama Lengkap">
+                <div id="login-loader">
+                    <button class="btn btn-primary" onclick="handleLogin()">Masuk</button>
+                </div>
+                <button class="btn-logout" style="background:none; border:none; margin-top:20px; cursor:pointer;" onclick="navTo('view-auth-choice')">← Kembali</button>
+            </div>
+        </div>
+
+        <!-- 4. SIGNUP FORM -->
+        <div id="view-signup" class="view hidden">
+            <div class="auth-card">
+                <h3>Sign Up</h3>
+                <input type="text" id="reg-name" placeholder="Nama Lengkap">
+                <input type="text" id="reg-phone" placeholder="Nomor Whatsapp">
+                <select id="reg-level">
+                    <option value="basic">Pilih Level Anda</option>
+                    <option value="basic">Basic</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advance">Advance</option>
+                </select>
+                <div id="signup-loader">
+                    <button class="btn btn-primary" onclick="handleSignup()">Daftar</button>
+                </div>
+                <button class="btn-logout" style="background:none; border:none; margin-top:20px; cursor:pointer;" onclick="navTo('view-auth-choice')">← Kembali</button>
+            </div>
+        </div>
+
+        <!-- 5. DASHBOARD LEVELS (Hanya muncul jika sudah login) -->
+        <!-- Bagian Dashboard Levels di index.html -->
+<div id="view-levels" class="view hidden">
+    <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:30px;">
+        <h2>Halo, <span id="user-name" style="color:var(--primary)">Student</span>!</h2>
+        <button onclick="handleLogout()" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold;">Logout</button>
+    </div>
+
+    <!-- Grid Menu Level: Semua kartu harus di dalam satu container ini -->
+<div class="level-grid">
+    <!-- Card 1 -->
+    <div class="card">
+        <h3 style="color:var(--primary)">Basic</h3>
+        <p>Materi Noun, Pronoun, Adjective, dan Conjunction untuk pemula.</p>
+        <button class="btn btn-primary" onclick="startLevel('basic')">Buka Exercise</button>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="card">
+        <h3 style="color:var(--secondary)">Intermediate</h3>
+        <p>Materi Causative, Modal, Direct-Indirect, dan Subjunctive.</p>
+        <button class="btn btn-primary" style="background:var(--secondary)" onclick="startLevel('intermediate')">Buka Exercise</button>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="card">
+        <h3 style="color:var(--accent)">Advance</h3>
+        <p>Materi Conditional Sentence, Clauses, dan Error Analysis.</p>
+        <button class="btn btn-primary" style="background:var(--accent)" onclick="startLevel('advance')">Buka Exercise</button>
+    </div>
+
+    <!-- Card 4 (Sekarang sudah masuk ke dalam level-grid) -->
+    <div class="card">
+        <h3 style="color:var(--text-dark)">Toefl Preparation</h3>
+        <p>Fill in the blank and Error Written Expression.</p>
+        <button class="btn btn-primary" style="background:var(--text-dark)" onclick="startLevel('toefl')">Buka Exercise</button>
+    </div>
+</div>
+    <!-- Progress Bar Section -->
+    <!-- Ubah shadow menjadi box-shadow -->
+<div id="progress-section" style="margin-top: 50px; background: white; padding: 25px; border-radius: 20px; box-shadow: var(--shadow); border: 1px solid #e2e8f0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h3 style="font-size: 1rem; color: var(--text-dark); font-weight: 800;">
+                <i class="fas fa-chart-line" style="margin-right: 8px; color: var(--primary);"></i>
+                OVERALL MASTERY PROGRESS
+            </h3>
+            <span id="overall-percent" style="font-weight: 800; color: var(--primary); font-size: 1.2rem;">0%</span>
+        </div>
+        <div style="width: 100%; height: 16px; background: #e2e8f0; border-radius: 10px; overflow: hidden;">
+            <div id="overall-bar" style="width: 0%; height: 100%; background: linear-gradient(to right, var(--primary), var(--accent)); transition: width 1s ease-in-out;"></div>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-light); margin-top: 10px; text-align: center;">
+            Total progress diambil dari nilai tertinggi di setiap latihan.
+        </p>
+    </div>
+</div>
+
+        <!-- 6. TOPIC LIST VIEW -->
+        <div id="view-topics" class="view hidden">
+            <button onclick="navTo('view-levels')" style="margin-bottom:20px; cursor:pointer; border:none; background:none; font-weight:bold;">← Kembali ke Level</button>
+            <h2 id="topic-title" style="margin-bottom:25px;">TOPICS</h2>
+            <div id="topic-container" class="topic-list">
+                <!-- Diisi oleh app.js -->
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <div class="copyright">
+            &copy; 2026 Peace English Academy. All Rights Reserved.
+        </div>
+        <div class="social-media">
+            <a href="#"><i class="fab fa-instagram"></i></a>
+            <a href="#"><i class="fab fa-facebook"></i></a>
+            <a href="#"><i class="fab fa-whatsapp"></i></a>
+        </div>
+    </footer>
+
+    <!-- Script Utama (PASTIKAN app.js ada di folder yang sama) -->
+    <script src="app.js"></script>
+</body>
+</html>

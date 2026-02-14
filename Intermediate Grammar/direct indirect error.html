@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise - Grammar Peace</title>
+    <style>
+        :root {
+            --bg-color: #0a0e14;
+            --card-bg: #161b22;
+            --text-main: #c9d1d9;
+            --accent: #58a6ff;
+            --success: #2ea043;
+            --error: #da3633;
+            --border: #30363d;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .top-nav {
+            width: 100%;
+            max-width: 750px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .btn-back {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+        }
+
+        .btn-back:hover { background: #30363d; border-color: var(--accent); }
+
+        #quiz-wrapper {
+            background: var(--card-bg);
+            max-width: 750px;
+            width: 100%;
+            padding: 35px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .header h1 { font-size: 1.4rem; color: var(--accent); margin: 0; text-transform: uppercase; }
+        #timer { font-family: monospace; font-size: 1.2rem; color: #ffa657; }
+
+        .progress-container { height: 4px; background: #21262d; margin-bottom: 25px; }
+        #progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
+
+        .question-box { margin-bottom: 30px; }
+        .question-text { font-size: 1.2rem; margin-bottom: 20px; line-height: 1.5; }
+
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+
+        .opt-btn {
+            background: #21262d;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 15px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+
+        .opt-btn:hover:not(:disabled) { background: #30363d; border-color: #8b949e; }
+        .opt-btn.correct { background: var(--success) !important; color: white; }
+        .opt-btn.wrong { background: var(--error) !important; color: white; }
+
+        #feedback-panel {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 6px;
+            background: #0d1117;
+            border-left: 4px solid var(--accent);
+            display: none;
+        }
+
+        .feedback-exp { font-size: 0.95rem; color: #8b949e; margin-top: 8px; }
+
+        .btn-nav {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            float: right;
+            margin-top: 20px;
+            display: none;
+        }
+
+        #results { display: none; text-align: center; }
+        .score-circle { font-size: 3rem; color: var(--accent); margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+<div class="top-nav">
+    <button class="btn-back" onclick="window.location.href='../index.html'">
+        🏠 Back to Levels
+    </button>
+</div>
+
+<div id="quiz-wrapper">
+    <div id="main-quiz">
+        <div class="header">
+            <!-- EDIT DI SINI: JUDUL TOPIK -->
+            <h1 id="display-topic">TOPIC NAME</h1>
+            <div id="timer">05:00</div>
+        </div>
+
+        <div class="progress-container"><div id="progress-bar"></div></div>
+
+        <div class="question-box">
+            <div id="q-text" class="question-text"></div>
+            <div id="options" class="options-grid"></div>
+        </div>
+
+        <div id="feedback-panel">
+            <div id="feedback-status" style="font-weight:bold"></div>
+            <div id="feedback-desc" class="feedback-exp"></div>
+        </div>
+
+        <button id="next-btn" class="btn-nav" onclick="goNext()">NEXT QUESTION</button>
+    </div>
+
+    <div id="results">
+        <h1>EXAM COMPLETE</h1>
+        <div class="score-circle" id="final-score">0/0</div>
+        <p id="rank-msg" style="margin-bottom: 20px;"></p>
+        <p style="color: var(--accent); font-size: 0.9rem;">Redirecting to Performance Report...</p>
+    </div>
+</div>
+
+<script src="../app.js"></script>
+
+<script>
+    /* ============================================================
+       BAGIAN 1: KONFIGURASI SOAL (EDIT DI SINI)
+       ============================================================ */
+    
+    const TOPIC_TITLE = "Mastering Direct Indirect Speech"; // Ganti Judul
+    const TOPIC_KEY = "direc indirect error"; // HARUS SAMA dengan nama di TOPICS app.js
+    const TIME_LIMIT = 300; // Dalam detik (300 = 5 menit)
+    const TOTAL_TO_SHOW = 20; // Jumlah soal yang ditampilkan (misal dari 20 soal, ambil 10 acak)
+
+    const pool = [
+    { 
+        q: "She asked me where was I going last night.",
+        o: ["asked", "where", "was I", "going"],
+        c: 2,
+        e: "Word Order Error. Dalam indirect speech, susunan tidak boleh dibalik. Should be: 'I was'.",
+        t: "💡 Question Word + Subject + Verb.",
+        m: "⚠️ Menggunakan susunan interogatif 'was I'."
+    },
+    { 
+        q: "He said that he will call me tomorrow.",
+        o: ["said", "that", "will", "tomorrow"],
+        c: 2,
+        e: "Tense Error. 'Said' (Past) menuntut backshift. Should be: 'would'.",
+        t: "💡 Will -> Would.",
+        m: "⚠️ Lupa mengubah modal will."
+    },
+    { 
+        q: "The teacher told us don't make noise.",
+        o: ["told", "us", "don't", "make"],
+        c: 2,
+        e: "Command Structure Error. Jangan pakai 'don't'. Should be: 'not to'.",
+        t: "💡 Told + Object + Not + To + V1.",
+        m: "⚠️ Menerjemahkan 'jangan' sebagai 'don't' dalam indirect."
+    },
+    { 
+        q: "She asked if I have finished my homework.",
+        o: ["asked", "if", "have", "homework"],
+        c: 2,
+        e: "Tense Sequence Error. 'Asked' (Past) -> 'Have' harus berubah. Should be: 'had'.",
+        t: "💡 Present Perfect -> Past Perfect.",
+        m: "⚠️ Mencampur Past (asked) dengan Present (have)."
+    },
+    { 
+        q: "He asked me that if I was ready.",
+        o: ["asked", "that", "if", "ready"],
+        c: 1,
+        e: "Redundant Connector. Jangan gunakan 'that' dan 'if' bersamaan. Hapus 'that'.",
+        t: "💡 Gunakan 'if' saja untuk Yes/No question.",
+        m: "⚠️ Menggunakan dua penghubung."
+    },
+    { 
+        q: "They said that they are happy to see us.",
+        o: ["said", "that", "are", "to see"],
+        c: 2,
+        e: "Tense Consistency Error. 'Said' (Past) -> 'Are' harus berubah. Should be: 'were'.",
+        t: "💡 Are -> Were.",
+        m: "⚠️ Lupa backshift to be."
+    },
+    { 
+        q: "She told to me that she was hungry.",
+        o: ["told", "to me", "that", "was"],
+        c: 1,
+        e: "Verb Pattern Error. 'Told' langsung diikuti objek tanpa 'to'. Should be: 'told me'.",
+        t: "💡 Say to someone VS Tell someone.",
+        m: "⚠️ Menambahkan 'to' setelah told."
+    },
+    { 
+        q: "He asked what did I want to eat.",
+        o: ["asked", "what", "did I want", "to eat"],
+        c: 2,
+        e: "Auxiliary Error. Jangan gunakan 'did' dalam indirect question. Should be: 'what I wanted'.",
+        t: "💡 Hapus do/does/did, ubah verb ke past.",
+        m: "⚠️ Mempertahankan struktur tanya 'did I'."
+    },
+    { 
+        q: "I wondered if she will arrive on time.",
+        o: ["wondered", "if", "will", "arrive"],
+        c: 2,
+        e: "Backshift Error. 'Wondered' (Past). Should be: 'would'.",
+        t: "💡 Will -> Would in past context.",
+        m: "⚠️ Lupa mengubah will."
+    },
+    { 
+        q: "She said that she saw him tomorrow.",
+        o: ["said", "saw", "him", "tomorrow"],
+        c: 3,
+        e: "Adverb/Tense Logic Error. 'Saw' (Past) tidak cocok dengan 'tomorrow' (Future). Jika maksudnya future: 'would see him the next day'. Jika maksudnya past: 'had seen him the day before'. Context error.",
+        t: "💡 Time Adverb must match the tense.",
+        m: "⚠️ Tabrakan keterangan waktu dan tenses."
+    },
+    { 
+        q: "He said he works here everyday.",
+        o: ["said", "works", "here", "everyday"],
+        c: 2,
+        e: "Adverb Change Error. Dalam indirect speech lampau, 'here' berubah. Should be: 'there'. (Meski 'works' bisa diterima jika masih factual, 'here' biasanya berubah).",
+        t: "💡 Here -> There.",
+        m: "⚠️ Lupa mengubah keterangan tempat."
+    },
+    { 
+        q: "The police ordered the man stop his car.",
+        o: ["ordered", "the man", "stop", "his car"],
+        c: 2,
+        e: "Command Structure Error. Kurang 'to'. Should be: 'to stop'.",
+        t: "💡 Order + Object + TO + V1.",
+        m: "⚠️ Menghilangkan 'to' pada perintah."
+    },
+    { 
+        q: "She asked weather I liked coffee.",
+        o: ["asked", "weather", "liked", "coffee"],
+        c: 1,
+        e: "Spelling Error. 'Weather' (cuaca) vs 'Whether' (apakah). Should be: 'whether'.",
+        t: "💡 Perhatikan ejaan homophone.",
+        m: "⚠️ Salah eja."
+    },
+    { 
+        q: "He said me that he was tired.",
+        o: ["said", "me", "that", "was"],
+        c: 0,
+        e: "Verb Pattern Error. 'Said' tidak boleh langsung diikuti orang (me). Gunakan 'told me' atau 'said to me'.",
+        t: "💡 Tell + Person. Say + (to + Person).",
+        m: "⚠️ 'He said me' is wrong."
+    },
+    { 
+        q: "They asked us to not leave the bag.",
+        o: ["asked", "us", "to not", "leave"],
+        c: 2,
+        e: "Split Infinitive/Style. Yang baku adalah 'not to'. Should be: 'not to leave'.",
+        t: "💡 Not to + V1.",
+        m: "⚠️ Menempatkan not setelah to."
+    },
+    { 
+        q: "She asked who was I talking to.",
+        o: ["asked", "who", "was I", "talking"],
+        c: 2,
+        e: "Word Order Error. Should be: 'I was'.",
+        t: "💡 Subject + Verb order.",
+        m: "⚠️ Susunan tanya 'was I'."
+    },
+    { 
+        q: "He said that he must go home yesterday.",
+        o: ["said", "must", "go", "yesterday"],
+        c: 1,
+        e: "Modal Past Error. 'Must' tidak punya bentuk lampau untuk yesterday. Should be: 'had to'.",
+        t: "💡 Must -> Had to.",
+        m: "⚠️ Menggunakan must dengan yesterday."
+    },
+    { 
+        q: "I asked him what is his name.",
+        o: ["asked", "what", "is", "his name"],
+        c: 2,
+        e: "Backshift & Order Error. 'Is' harus jadi 'was' dan letaknya di akhir. Should be: 'what his name was'.",
+        t: "💡 Be careful with 'to be' position.",
+        m: "⚠️ Struktur 'what is his name' hanya untuk direct speech."
+    },
+    { 
+        q: "She said that this was her favorite book.",
+        o: ["said", "that", "this", "was"],
+        c: 2,
+        e: "Demonstrative Error. Dalam indirect, 'this' menunjuk benda jauh (saat diceritakan). Should be: 'that'.",
+        t: "💡 This -> That.",
+        m: "⚠️ Tetap menggunakan 'this'."
+    },
+    { 
+        q: "He told that he was leaving.",
+        o: ["told", "that", "was", "leaving"],
+        c: 0,
+        e: "Missing Object. 'Told' butuh objek orang. Should be: 'He told me that' or 'He said that'.",
+        t: "💡 Tell + Someone + That clause.",
+        m: "⚠️ Menggunakan 'told' tanpa objek personal."
+    }
+];
+    /* ============================================================
+       BAGIAN 2: LOGIKA SISTEM (JANGAN DIEDIT KECUALI PAHAM)
+       ============================================================ */
+    
+    let currentQuestions = [];
+    let currentIdx = 0;
+    let score = 0;
+    let timer;
+    let timeLeft = TIME_LIMIT;
+    let answered = false;
+
+    function init() {
+        document.getElementById('display-topic').innerText = TOPIC_TITLE;
+        // Acak soal dan ambil sebanyak TOTAL_TO_SHOW
+        currentQuestions = pool.sort(() => 0.5 - Math.random()).slice(0, TOTAL_TO_SHOW);
+        startTimer();
+        showQuestion();
+    }
+
+    function startTimer() {
+        timer = setInterval(() => {
+            timeLeft--;
+            let m = Math.floor(timeLeft/60);
+            let s = timeLeft % 60;
+            document.getElementById('timer').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+            if(timeLeft <= 0) finish();
+        }, 1000);
+    }
+
+    function showQuestion() {
+        answered = false;
+        document.getElementById('next-btn').style.display = 'none';
+        document.getElementById('feedback-panel').style.display = 'none';
+        const q = currentQuestions[currentIdx];
+        
+        document.getElementById('progress-bar').style.width = (currentIdx / TOTAL_TO_SHOW * 100) + "%";
+        document.getElementById('q-text').innerText = `${currentIdx + 1}. ${q.q}`;
+        
+        const opts = document.getElementById('options');
+        opts.innerHTML = '';
+        q.o.forEach((o, i) => {
+            const b = document.createElement('button');
+            b.className = 'opt-btn';
+            b.innerText = o;
+            b.onclick = () => check(i, b);
+            opts.appendChild(b);
+        });
+    }
+
+    function check(idx, btn) {
+        if(answered) return;
+        answered = true;
+        const q = currentQuestions[currentIdx];
+        const all = document.querySelectorAll('.opt-btn');
+
+        if(idx === q.c) {
+            score++;
+            btn.classList.add('correct');
+            showFeedback("CORRECT", q.e);
+        } else {
+            btn.classList.add('wrong');
+            all[q.c].classList.add('correct');
+            showFeedback("INCORRECT", q.e);
+        }
+        document.getElementById('next-btn').style.display = 'block';
+    }
+
+    function showFeedback(status, text) {
+        const p = document.getElementById('feedback-panel');
+        document.getElementById('feedback-status').innerText = status;
+        document.getElementById('feedback-status').style.color = (status === "CORRECT") ? "var(--success)" : "var(--error)";
+        document.getElementById('feedback-desc').innerText = text;
+        p.style.display = 'block';
+    }
+
+    function goNext() {
+        currentIdx++;
+        if(currentIdx < TOTAL_TO_SHOW) showQuestion();
+        else finish();
+    }
+
+    function finish() {
+        clearInterval(timer);
+        document.getElementById('main-quiz').style.display = 'none';
+        document.getElementById('results').style.display = 'block';
+        document.getElementById('final-score').innerText = `${score}/${TOTAL_TO_SHOW}`;
+        
+        let msg = "";
+        let grade = "";
+        let percent = Math.round((score / TOTAL_TO_SHOW) * 100);
+
+        if(percent >= 85) { msg = "Excellent Work! Mastery Achieved."; grade = "A"; }
+        else if(percent >= 70) { msg = "Good Job! A bit more practice and you'll be perfect."; grade = "B"; }
+        else { msg = "Keep Practicing. Review the explanations to improve."; grade = "C"; }
+        
+        document.getElementById('rank-msg').innerText = msg;
+
+        setTimeout(() => {
+            if (typeof finishQuiz === "function") {
+                finishQuiz(percent, score, TOTAL_TO_SHOW, grade, msg, TOPIC_KEY);
+            }
+        }, 3000); 
+    }
+
+    init();
+</script>
+</body>
+</html>

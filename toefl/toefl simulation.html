@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOEFL Exam Simulation - Interactive</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --card: #161b22;
+            --text: #c9d1d9;
+            --accent: #58a6ff;
+            --success: #2ea043;
+            --error: #da3633;
+            --border: #30363d;
+            --gold: #f2cc60;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        #app-container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        .quiz-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        .meta-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .timer-box {
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 1.5rem;
+            color: var(--gold);
+            background: #21262d;
+            padding: 5px 15px;
+            border-radius: 6px;
+            border: 1px solid var(--gold);
+        }
+
+        .progress-container {
+            height: 8px;
+            background: #21262d;
+            border-radius: 4px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        #progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), #bc8cff);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .question-meta {
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 1.5px;
+            color: var(--accent);
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .q-text {
+            font-size: 1.25rem;
+            margin-bottom: 30px;
+            color: #f0f6fc;
+        }
+
+        /* Error Analysis Style */
+        .u-line {
+            border-bottom: 2px solid var(--accent);
+            padding: 0 4px;
+            font-weight: bold;
+            color: var(--accent);
+            cursor: help;
+        }
+
+        .options-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .opt-item {
+            background: #21262d;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 16px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 1rem;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+        }
+
+        .opt-item:hover:not(.disabled) {
+            background: #30363d;
+            border-color: var(--accent);
+        }
+
+        .opt-item.correct { background: var(--success) !important; color: white; border-color: var(--success); }
+        .opt-item.wrong { background: var(--error) !important; color: white; border-color: var(--error); }
+
+        .prefix {
+            font-weight: bold;
+            margin-right: 15px;
+            color: var(--accent);
+        }
+
+        #feedback-area {
+            margin-top: 30px;
+            padding: 25px;
+            background: #0d1117;
+            border-radius: 8px;
+            border-left: 5px solid var(--accent);
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .btn-nav {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 14px 40px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            float: right;
+            margin-top: 25px;
+            display: none;
+        }
+
+        #result-screen {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .score-box {
+            font-size: 4rem;
+            color: var(--accent);
+            margin: 20px 0;
+            font-weight: 800;
+        }
+
+        .toefl-converted {
+            font-size: 2rem;
+            color: var(--gold);
+            margin-bottom: 30px;
+        }
+
+        .analysis-box {
+            font-size: 0.95rem;
+            color: #8b949e;
+            max-width: 600px;
+            margin: 0 auto 30px auto;
+        }
+        .top-nav {
+    width: 100%;
+    max-width: 900px; /* Samakan dengan max-width app-container */
+    margin: 20px auto 0 auto;
+    padding: 0 20px;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.btn-back {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-back:hover {
+    background: #30363d;
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: translateX(-3px);
+}
+    </style>
+</head>
+<body>
+<div class="top-nav">
+    <button class="btn-back" onclick="goHome()">
+        🏠 Back to Home
+    </button>
+</div>
+<div id="app-container">
+    <div id="quiz-view" class="quiz-card">
+        <div class="meta-header">
+            <div>
+                <h2 style="margin:0; font-size: 1.1rem;">TOEFL SIMULATION</h2>
+                <div style="font-size: 0.8rem; color: #8b949e;">Section 2: Structure & Written Expression</div>
+            </div>
+            <div id="timer" class="timer-box">25:00</div>
+        </div>
+
+        <div class="progress-container"><div id="progress-fill"></div></div>
+
+        <div id="question-area">
+            <div id="q-meta" class="question-meta"></div>
+            <div id="q-text" class="q-text"></div>
+            <div id="options-list" class="options-list"></div>
+        </div>
+
+        <div id="feedback-area">
+            <div id="f-status" style="font-weight: bold; font-size: 1.1rem; margin-bottom: 10px;"></div>
+            <div id="f-exp" style="margin-bottom: 10px;"></div>
+            <div id="f-tip" style="color: var(--accent); font-style: italic; font-size: 0.9rem;"></div>
+            <div id="f-mis" style="color: #ffa657; font-size: 0.9rem; margin-top: 5px;"></div>
+        </div>
+
+        <button id="btn-next" class="btn-nav" onclick="nextQuestion()">NEXT QUESTION</button>
+        <div style="clear: both;"></div>
+    </div>
+
+    <div id="result-screen" class="quiz-card">
+        <h1 style="color: var(--accent);">EXAM RESULTS</h1>
+        <div class="score-box" id="raw-score">0/40</div>
+        <p>Your Estimated TOEFL Section 2 Score:</p>
+        <div class="toefl-converted" id="converted-score">31</div>
+        <div class="analysis-box" id="result-msg"></div>
+        <button class="btn-nav" style="float:none; display:inline-block;" onclick="location.reload()">RESTART SIMULATION</button>
+    </div>
+</div>
+<script src="../app.js"></script>
+<script>
+    /* ============================================================
+       SOAL POOL (Total 40 Soal: 20 Structure, 20 Written Expression)
+       ============================================================ */
+    const masterPool = [
+        // PART 1: STRUCTURE (1-20)
+        { q: "_____ the high cost of the equipment, the department decided to delay the purchase.", o: ["Because", "Due to", "Since", "As"], c: 1, e: "Due to diikuti Noun Phrase (the high cost). Because/Since butuh Clause.", t: "💡 Due to = Because of.", m: "⚠️ Jangan pakai 'Because' jika tidak ada verb setelahnya.", type: "PART A: STRUCTURE" },
+        { q: "Not only _____ the exam, but he also received a full scholarship.", o: ["he passed", "did he pass", "passed he", "he has passed"], c: 1, e: "Inversi setelah 'Not only'. Butuh auxiliary 'did' di depan subjek.", t: "💡 Not only + Aux + S + V.", m: "⚠️ Hindari susunan kalimat pernyataan 'he passed'.", type: "PART A: STRUCTURE" },
+        { q: "The company would have made a profit if it _____ its prices last year.", o: ["lowered", "had lowered", "would lower", "has lowered"], c: 1, e: "Conditional Type 3 (Unreal Past). Pasangan 'would have V3' adalah 'had V3'.", t: "💡 If + Past Perfect.", m: "⚠️ Jangan gunakan 'would' di klausa IF.", type: "PART A: STRUCTURE" },
+        { q: "Rarely _____ such a beautiful sunset in the desert.", o: ["we have seen", "have we seen", "we saw", "did we saw"], c: 1, e: "Inversi setelah keterangan negatif (Rarely).", t: "💡 Negative word + Aux + S + V.", m: "⚠️ Pastikan auxiliary dan verb sesuai tenses.", type: "PART A: STRUCTURE" },
+        { q: "The manager suggested that the project _____ completed by the end of the month.", o: ["is", "was", "be", "should"], c: 2, e: "Subjunctive mode setelah 'suggest that'. Gunakan bare infinitive (be).", t: "💡 Suggest that + S + V1 (Base Form).", m: "⚠️ Jangan gunakan 'is' meskipun subjeknya tunggal.", type: "PART A: STRUCTURE" },
+        { q: "_____ the result of the experiment was successful surprised the researchers.", o: ["That", "What", "Which", "Whether"], c: 0, e: "Noun clause sebagai subjek utuh. 'Bahwa hasilnya sukses...'", t: "💡 That + Clause + Verb.", m: "⚠️ 'What' hanya jika subjek dalam klausa hilang.", type: "PART A: STRUCTURE" },
+        { q: "The woman _____ spoke to you earlier is the CEO of the company.", o: ["who", "whom", "whose", "which"], c: 0, e: "Relative pronoun sebagai subjek orang.", t: "💡 Who + Verb.", m: "⚠️ 'Whom' hanya untuk objek.", type: "PART A: STRUCTURE" },
+        { q: "By the time he retires next year, he _____ for this firm for forty years.", o: ["will work", "will have worked", "works", "is working"], c: 1, e: "Future Perfect. Menunjukkan aksi yang akan sudah selesai di masa depan.", t: "💡 By the time + Present, Future Perfect.", m: "⚠️ Gunakan 'will have' untuk rentang waktu.", type: "PART A: STRUCTURE" },
+        { q: "It is essential that every student _____ the rules of the laboratory.", o: ["follows", "follow", "followed", "following"], c: 1, e: "Subjunctive mode setelah 'essential that'.", t: "💡 Essential that + S + V1.", m: "⚠️ Hindari penambahan -s pada kata kerja.", type: "PART A: STRUCTURE" },
+        { q: "The results of the survey _____ that most people prefer remote work.", o: ["indicate", "indicates", "indicating", "to indicate"], c: 0, e: "Subject-Verb Agreement. 'Results' (jamak) butuh verb 'indicate'.", t: "💡 Perhatikan subjek asli sebelum preposisi (of the survey).", m: "⚠️ Jangan tertipu oleh kata 'survey' yang tunggal.", type: "PART A: STRUCTURE" },
+        { q: "Scarcely _____ the game started when it began to rain heavily.", o: ["had", "did", "the", "has"], c: 0, e: "Inversi 'Scarcely ... when'. Pasangan past perfect.", t: "💡 Scarcely + had + S + V3.", m: "⚠️ Jangan gunakan 'did' dengan 'when' dalam konteks ini.", type: "PART A: STRUCTURE" },
+        { q: "The more he studied, _____ he understood the complex theory.", o: ["the more", "more", "the most", "better"], c: 0, e: "Double Comparative. 'The more ... the more ...'", t: "💡 Semakin... semakin...", m: "⚠️ Jangan hilangkan kata 'The'.", type: "PART A: STRUCTURE" },
+        { q: "Had I known about the meeting, I _____ there.", o: ["would be", "will be", "would have been", "had been"], c: 2, e: "Inversion Conditional Type 3.", t: "💡 Had V3 -> Would have V3.", m: "⚠️ Jangan gunakan 'would be' (Type 2).", type: "PART A: STRUCTURE" },
+        { q: "The artifacts _____ by the archaeologists are from the Ming Dynasty.", o: ["finding", "found", "find", "which found"], c: 1, e: "Reduced Adjective Clause (Passive). 'Which were found'.", t: "💡 Benda + V3 (bermakna pasif).", m: "⚠️ 'Finding' berarti artefaknya yang mencari.", type: "PART A: STRUCTURE" },
+        { q: "She is used to _____ in a high-pressure environment.", o: ["work", "working", "be work", "to work"], c: 1, e: "Be used to + Gerund (V-ing) bermakna terbiasa.", t: "💡 Be used to + Ving.", m: "⚠️ 'Used to' saja baru diikuti V1.", type: "PART A: STRUCTURE" },
+        { q: "I would rather you _____ earlier to the airport.", o: ["go", "went", "gone", "going"], c: 1, e: "Would rather + Subject + V2 (Past Simple) untuk situasi sekarang/depan.", t: "💡 Preferensi hipotesis.", m: "⚠️ Jangan gunakan V1 jika ada subjek orang kedua.", type: "PART A: STRUCTURE" },
+        { q: "_____ any further questions, please feel free to ask.", o: ["If", "Should you have", "Had you", "Unless"], c: 1, e: "Inversion Conditional Type 1 (Sopan).", t: "💡 Should + S + V1.", m: "⚠️ Bentuk paling formal dalam bisnis.", type: "PART A: STRUCTURE" },
+        { q: "Neither the manager nor the employees _____ about the new policy.", o: ["know", "knows", "knowing", "to know"], c: 0, e: "Agreement 'Neither... nor'. Verb ikut subjek terdekat (employees).", t: "💡 Employees (Jamak) -> Know.", m: "⚠️ Jangan ikut ke 'manager'.", type: "PART A: STRUCTURE" },
+        { q: "The climate of Indonesia is much more humid than _____ of Australia.", o: ["this", "that", "those", "it"], c: 1, e: "Parallel comparison. 'That' menggantikan 'The climate'.", t: "💡 That (Tunggal), Those (Jamak).", m: "⚠️ Jangan membandingkan 'Iklim' dengan 'Negara' secara langsung.", type: "PART A: STRUCTURE" },
+        { q: "The professor, _____ research is world-famous, will give a lecture tonight.", o: ["who", "whom", "whose", "which"], c: 2, e: "Relative pronoun kepemilikan (Possessive).", t: "💡 Whose + Noun.", m: "⚠️ Jangan pakai 'who' untuk kepemilikan.", type: "PART A: STRUCTURE" },
+
+        // PART 2: WRITTEN EXPRESSION (21-40)
+        { q: "The <span class='u-line'>average</span> temperature <span class='u-line'>was to rise</span>, the ice caps <span class='u-line'>will melt</span> more <span class='u-line'>rapidly</span>.", o: ["average", "was to rise", "will melt", "rapidly"], c: 2, e: "Type 2 Error. Pasangan 'was' adalah 'would'.", t: "💡 Was/Were -> Would.", m: "⚠️ Perbaiki menjadi 'would melt'.", type: "PART B: ERROR ANALYSIS" },
+        { q: "Jupiter <span class='u-line'>is</span> the <span class='u-line'>most largest</span> planet <span class='u-line'>in</span> our solar <span class='u-line'>system</span>.", o: ["is", "most largest", "in", "system"], c: 1, e: "Double Superlative. 'Largest' sudah cukup.", t: "💡 Hapus 'most'.", m: "⚠️ Double superlative salah.", type: "PART B: ERROR ANALYSIS" },
+        { q: "I <span class='u-line'>am</span> <span class='u-line'>looking</span> forward <span class='u-line'>to</span> <span class='u-line'>see</span> you again at the conference.", o: ["am", "looking", "to", "see"], c: 3, e: "Fixed expression 'Look forward to' + V-ing.", t: "💡 To di sini preposisi.", m: "⚠️ Ganti menjadi 'seeing'.", type: "PART B: ERROR ANALYSIS" },
+        { q: "The <span class='u-line'>book</span> <span class='u-line'>that</span> I read <span class='u-line'>it</span> yesterday was <span class='u-line'>fantastic</span>.", o: ["book", "that", "it", "fantastic"], c: 2, e: "Redundant Pronoun. 'That' sudah mewakili 'book'.", t: "💡 Hapus 'it'.", m: "⚠️ Kesalahan paling sering di TOEFL.", type: "PART B: ERROR ANALYSIS" },
+        { q: "I <span class='u-line'>wonder</span> <span class='u-line'>why did he</span> leave <span class='u-line'>the</span> meeting <span class='u-line'>early</span>.", o: ["wonder", "why did he", "the", "early"], c: 1, e: "Noun clause order. Harusnya 'why he left'.", t: "💡 S + V.", m: "⚠️ Jangan pakai auxiliary tanya did/does.", type: "PART B: ERROR ANALYSIS" },
+        { q: "The <span class='u-line'>manager</span> <span class='u-line'>made</span> us <span class='u-line'>to stay</span> <span class='u-line'>late</span> for the project.", o: ["manager", "made", "to stay", "late"], c: 2, e: "Causative 'make' aktif + V1 tanpa to.", t: "💡 Make + Obj + V1.", m: "⚠️ Ganti menjadi 'stay'.", type: "PART B: ERROR ANALYSIS" },
+        { q: "He <span class='u-line'>refused</span> <span class='u-line'>joining</span> the <span class='u-line'>new</span> <span class='u-line'>club</span> next semester.", o: ["refused", "joining", "new", "club"], c: 1, e: "Verb pattern 'Refuse' + To Infinitive.", t: "💡 Refuse to V1.", m: "⚠️ Ganti menjadi 'to join'.", type: "PART B: ERROR ANALYSIS" },
+        { q: "The <span class='u-line'>broken</span> window <span class='u-line'>was</span> <span class='u-line'>fixing</span> by <span class='u-line'>the</span> workers.", o: ["broken", "was", "fixing", "the"], c: 2, e: "Passive Voice. Jendela 'diperbaiki' (pasif).", t: "💡 Be + V3.", m: "⚠️ Perbaiki menjadi 'fixed'.", type: "PART B: ERROR ANALYSIS" },
+        { q: "I <span class='u-line'>was</span> <span class='u-line'>very</span> <span class='u-line'>surprising</span> by <span class='u-line'>the</span> sudden news.", o: ["was", "very", "surprising", "the"], c: 2, e: "Participle Adjective. Orang merasa 'terkejut'.", t: "💡 V-ed for feelings.", m: "⚠️ Ganti menjadi 'surprised'.", type: "PART B: ERROR ANALYSIS" },
+        { q: "He <span class='u-line'>studied</span> hard <span class='u-line'>so that</span> he <span class='u-line'>could</span> <span class='u-line'>passed</span>.", o: ["studied", "so that", "could", "passed"], c: 3, e: "Modal 'could' + V1 murni.", t: "💡 Could pass.", m: "⚠️ Jangan pakai V2/V3 setelah modal.", type: "PART B: ERROR ANALYSIS" },
+        { q: "Since <span class='u-line'>it</span> was <span class='u-line'>late</span>, <span class='u-line'>but</span> we decided <span class='u-line'>to leave</span>.", o: ["it", "late", "but", "to leave"], c: 2, e: "Double Conjunction 'Since' dan 'but'.", t: "💡 Hapus salah satu.", m: "⚠️ Dilarang pakai dua konjungsi dalam satu makna.", type: "PART B: ERROR ANALYSIS" },
+        { q: "This laptop <span class='u-line'>is</span> <span class='u-line'>superior</span> <span class='u-line'>than</span> the previous <span class='u-line'>model</span>.", o: ["is", "superior", "than", "model"], c: 2, e: "Superior + To.", t: "💡 Special comparative.", m: "⚠️ Bukan 'than'.", type: "PART B: ERROR ANALYSIS" },
+        { q: "He <span class='u-line'>suggested</span> that she <span class='u-line'>attends</span> the <span class='u-line'>orientation</span> <span class='u-line'>program</span>.", o: ["suggested", "attends", "orientation", "program"], c: 1, e: "Subjunctive 'suggest that' + V1 murni.", t: "💡 S + V1.", m: "⚠️ Jangan pakai akhiran -s.", type: "PART B: ERROR ANALYSIS" },
+        { q: "The <span class='u-line'>results</span> <span class='u-line'>of</span> the survey <span class='u-line'>was</span> <span class='u-line'>announced</span> today.", o: ["results", "of", "was", "announced"], c: 2, e: "Agreement. Subjek 'results' (jamak).", t: "💡 Harusnya 'were'.", m: "⚠️ Jangan ikut ke 'survey'.", type: "PART B: ERROR ANALYSIS" },
+        { q: "If I <span class='u-line'>was</span> <span class='u-line'>you</span>, I <span class='u-line'>would</span> <span class='u-line'>apply</span> for that job.", o: ["was", "you", "would", "apply"], c: 0, e: "Subjunctive 'were' untuk semua subjek.", t: "💡 If I were you.", m: "⚠️ 'Was' tidak baku di TOEFL.", type: "PART B: ERROR ANALYSIS" },
+        { q: "The man <span class='u-line'>to who</span> I <span class='u-line'>spoke</span> was <span class='u-line'>very</span> <span class='u-line'>helpful</span>.", o: ["to who", "spoke", "very", "helpful"], c: 0, e: "Preposition + Whom.", t: "💡 To whom.", m: "⚠️ Bukan 'who'.", type: "PART B: ERROR ANALYSIS" },
+        { q: "Hardly <span class='u-line'>I had</span> <span class='u-line'>entered</span> when <span class='u-line'>the phone</span> <span class='u-line'>rang</span>.", o: ["I had", "entered", "the phone", "rang"], c: 0, e: "Inversion 'Hardly'.", t: "💡 Hardly had I.", m: "⚠️ S + Aux harus dibalik.", type: "PART B: ERROR ANALYSIS" },
+        { q: "She <span class='u-line'>wants</span> <span class='u-line'>to know</span> <span class='u-line'>where is the</span> <span class='u-line'>post office</span>.", o: ["wants", "to know", "where is the", "post office"], c: 2, e: "Noun clause order.", t: "💡 where the post office is.", m: "⚠️ Jangan pakai pola tanya.", type: "PART B: ERROR ANALYSIS" },
+        { q: "The <span class='u-line'>more</span> <span class='u-line'>cheaper</span> <span class='u-line'>it is</span>, the <span class='u-line'>better</span>.", o: ["more", "cheaper", "it is", "better"], c: 1, e: "Double Comparative. 'Cheaper' sudah comparative.", t: "💡 Hapus 'more'.", m: "⚠️ Jangan double -er dan more.", type: "PART B: ERROR ANALYSIS" },
+        { q: "The <span class='u-line'>information</span> <span class='u-line'>given</span> in the <span class='u-line'>news</span> <span class='u-line'>were</span> false.", o: ["information", "given", "news", "were"], c: 3, e: "Agreement. 'Information' adalah Uncountable (Tunggal).", t: "💡 Harusnya 'was'.", m: "⚠️ Uncountable noun selalu tunggal.", type: "PART B: ERROR ANALYSIS" }
+    ];
+
+    /* ============================================================
+       LOGIKA SISTEM (RANDOMIZE & ENGINE)
+       ============================================================ */
+    let quizData = [];
+    let currentIdx = 0;
+    let score = 0;
+    let timeLeft = 1500;
+    let timerInterval;
+    let answered = false;
+
+    // Fisher-Yates Shuffle
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    function init() {
+        quizData = shuffle([...masterPool]); // Acak soal saat mulai
+        startTimer();
+        showQuestion();
+    }
+
+    function startTimer() {
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            const m = Math.floor(timeLeft / 60);
+            const s = timeLeft % 60;
+            document.getElementById('timer').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+            if(timeLeft <= 0) finish();
+        }, 1000);
+    }
+
+    function showQuestion() {
+        answered = false;
+        document.getElementById('btn-next').style.display = 'none';
+        document.getElementById('feedback-area').style.display = 'none';
+        
+        const q = quizData[currentIdx];
+        const progress = ((currentIdx) / quizData.length) * 100;
+        document.getElementById('progress-fill').style.width = progress + "%";
+
+        document.getElementById('q-meta').innerText = q.type;
+        document.getElementById('q-text').innerHTML = `${currentIdx + 1}. ${q.q}`;
+
+        const opts = document.getElementById('options-list');
+        opts.innerHTML = '';
+        const labels = ['A', 'B', 'C', 'D'];
+
+        q.o.forEach((opt, i) => {
+            const btn = document.createElement('div');
+            btn.className = 'opt-item';
+            btn.innerHTML = `<span class="prefix">${labels[i]}</span> ${opt}`;
+            btn.onclick = () => checkAnswer(i, btn);
+            opts.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(idx, btn) {
+        if(answered) return;
+        answered = true;
+        const q = quizData[currentIdx];
+        const allOpts = document.querySelectorAll('.opt-item');
+
+        if(idx === q.c) {
+            score++;
+            btn.classList.add('correct');
+            showFeedback("CORRECT! ✅", q);
+        } else {
+            btn.classList.add('wrong');
+            allOpts[q.c].classList.add('correct');
+            showFeedback("INCORRECT! ❌", q);
+        }
+        document.getElementById('btn-next').style.display = 'block';
+    }
+
+    function showFeedback(status, q) {
+        const area = document.getElementById('feedback-area');
+        document.getElementById('f-status').innerText = status;
+        document.getElementById('f-status').style.color = status.includes("CORRECT") ? "var(--success)" : "var(--error)";
+        document.getElementById('f-exp').innerText = q.e;
+        document.getElementById('f-tip').innerText = q.t;
+        document.getElementById('f-mis').innerText = q.m;
+        area.style.display = 'block';
+    }
+
+    function nextQuestion() {
+        currentIdx++;
+        if(currentIdx < quizData.length) {
+            showQuestion();
+        } else {
+            finish();
+        }
+    }
+
+    function finish() {
+        clearInterval(timerInterval);
+        document.getElementById('quiz-view').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        
+        document.getElementById('raw-score').innerText = `${score}/40`;
+        
+        // TOEFL ITP Section 2 Conversion Table
+        const conv = [31,31,31,31,31,31,31,31,31,32,32,33,35,36,37,38,40,41,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,60,61,63,65,67,68,68];
+        const finalScore = conv[score];
+        
+        document.getElementById('converted-score').innerText = finalScore;
+
+        let msg = "";
+        if(finalScore >= 60) msg = "Excellent! You have a near-native command of formal English grammar. Mastery level achieved.";
+        else if(finalScore >= 50) msg = "Great job! You are at the Advanced level. Just a few minor refinements to reach the top tier.";
+        else if(finalScore >= 40) msg = "Solid effort. You have a good intermediate foundation but need to work on complex inversions and subjunctive modes.";
+        else msg = "Keep practicing! Review basic subject-verb agreement and the different types of conditional sentences.";
+        
+        document.getElementById('result-msg').innerText = msg;
+    }
+    function goHome() {
+    // Jika ingin memberi konfirmasi saat kuis sedang berlangsung
+    if (currentIdx < quizData.length && timeLeft > 0 && !document.getElementById('result-screen').style.display === 'block') {
+        if (confirm("Are you sure you want to leave? Your progress will be lost.")) {
+            window.location.href = '../index.html'; // Sesuaikan dengan path file home Anda
+        }
+    } else {
+        window.location.href = '../index.html';
+    }
+}
+    init();
+</script>
+
+</body>
+</html>

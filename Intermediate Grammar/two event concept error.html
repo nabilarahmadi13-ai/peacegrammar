@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise - Grammar Peace</title>
+    <style>
+        :root {
+            --bg-color: #0a0e14;
+            --card-bg: #161b22;
+            --text-main: #c9d1d9;
+            --accent: #58a6ff;
+            --success: #2ea043;
+            --error: #da3633;
+            --border: #30363d;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .top-nav {
+            width: 100%;
+            max-width: 750px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .btn-back {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+        }
+
+        .btn-back:hover { background: #30363d; border-color: var(--accent); }
+
+        #quiz-wrapper {
+            background: var(--card-bg);
+            max-width: 750px;
+            width: 100%;
+            padding: 35px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .header h1 { font-size: 1.4rem; color: var(--accent); margin: 0; text-transform: uppercase; }
+        #timer { font-family: monospace; font-size: 1.2rem; color: #ffa657; }
+
+        .progress-container { height: 4px; background: #21262d; margin-bottom: 25px; }
+        #progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
+
+        .question-box { margin-bottom: 30px; }
+        .question-text { font-size: 1.2rem; margin-bottom: 20px; line-height: 1.5; }
+
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+
+        .opt-btn {
+            background: #21262d;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 15px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+
+        .opt-btn:hover:not(:disabled) { background: #30363d; border-color: #8b949e; }
+        .opt-btn.correct { background: var(--success) !important; color: white; }
+        .opt-btn.wrong { background: var(--error) !important; color: white; }
+
+        #feedback-panel {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 6px;
+            background: #0d1117;
+            border-left: 4px solid var(--accent);
+            display: none;
+        }
+
+        .feedback-exp { font-size: 0.95rem; color: #8b949e; margin-top: 8px; }
+
+        .btn-nav {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            float: right;
+            margin-top: 20px;
+            display: none;
+        }
+
+        #results { display: none; text-align: center; }
+        .score-circle { font-size: 3rem; color: var(--accent); margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+<div class="top-nav">
+    <button class="btn-back" onclick="window.location.href='../index.html'">
+        🏠 Back to Levels
+    </button>
+</div>
+
+<div id="quiz-wrapper">
+    <div id="main-quiz">
+        <div class="header">
+            <!-- EDIT DI SINI: JUDUL TOPIK -->
+            <h1 id="display-topic">TOPIC NAME</h1>
+            <div id="timer">05:00</div>
+        </div>
+
+        <div class="progress-container"><div id="progress-bar"></div></div>
+
+        <div class="question-box">
+            <div id="q-text" class="question-text"></div>
+            <div id="options" class="options-grid"></div>
+        </div>
+
+        <div id="feedback-panel">
+            <div id="feedback-status" style="font-weight:bold"></div>
+            <div id="feedback-desc" class="feedback-exp"></div>
+        </div>
+
+        <button id="next-btn" class="btn-nav" onclick="goNext()">NEXT QUESTION</button>
+    </div>
+
+    <div id="results">
+        <h1>EXAM COMPLETE</h1>
+        <div class="score-circle" id="final-score">0/0</div>
+        <p id="rank-msg" style="margin-bottom: 20px;"></p>
+        <p style="color: var(--accent); font-size: 0.9rem;">Redirecting to Performance Report...</p>
+    </div>
+</div>
+
+<script src="../app.js"></script>
+
+<script>
+    /* ============================================================
+       BAGIAN 1: KONFIGURASI SOAL (EDIT DI SINI)
+       ============================================================ */
+    
+    const TOPIC_TITLE = "Mastering Two Event Concept"; // Ganti Judul
+    const TOPIC_KEY = "two event concept error"; // HARUS SAMA dengan nama di TOPICS app.js
+    const TIME_LIMIT = 300; // Dalam detik (300 = 5 menit)
+    const TOTAL_TO_SHOW = 20; // Jumlah soal yang ditampilkan (misal dari 20 soal, ambil 10 acak)
+
+    const pool = [
+        { 
+        q: "We will visit the museum when the weather will clear up tomorrow.",
+        o: ["We will visit", "when the weather", "will clear up", "No Error"],
+        c: 2,
+        e: "Double Future Error. Dalam time clause (when), jangan gunakan 'will'. Should be: 'clears up'.",
+        t: "💡 When + Simple Present (for future meaning).",
+        m: "⚠️ Mengira karena 'tomorrow' maka harus pakai 'will'."
+    },
+    { 
+        q: "By the time the firemen arrived, the building collapsed completely.",
+        o: ["By the time", "arrived", "collapsed", "No Error"],
+        c: 2,
+        e: "Sequence error. Bangunan runtuh SEBELUM pemadam datang. Should be: 'had collapsed'.",
+        t: "💡 By the time + Past -> Past Perfect needed.",
+        m: "⚠️ Lupa mengubah verb kedua menjadi bentuk perfect."
+    },
+    { 
+        q: "While she was washing the dishes, she drops a plate and broke it.",
+        o: ["While she", "was washing", "drops", "No Error"],
+        c: 2,
+        e: "Tense inconsistency. Konteks kalimat adalah lampau. Should be: 'dropped'.",
+        t: "💡 Past Continuous + Simple Past context.",
+        m: "⚠️ Mencampur Present (drops) dengan Past (broke/was)."
+    },
+    { 
+        q: "Since he has bought the new car, he has not taken the bus to work.",
+        o: ["Since he", "has bought", "has not taken", "No Error"],
+        c: 1,
+        e: "Since rule error. Setelah 'Since' gunakan Simple Past untuk titik waktu. Should be: 'bought'.",
+        t: "💡 Since + Simple Past (Time Point), + Present Perfect.",
+        m: "⚠️ Menggunakan Perfect tense di dalam klausa 'Since'."
+    },
+    { 
+        q: "They were playing cards when the electricity goes out suddenly.",
+        o: ["They were playing", "when", "goes out", "No Error"],
+        c: 2,
+        e: "Tense mismatch. Main clause lampau (were playing), time clause harus lampau. Should be: 'went out'.",
+        t: "💡 Past Cont + When + Simple Past.",
+        m: "⚠️ Verb 1 (goes) muncul di kalimat Past."
+    },
+    { 
+        q: "I saw him just after he arrives at the airport.",
+        o: ["I saw", "just after", "arrives", "No Error"],
+        c: 2,
+        e: "Sequence past. Saya melihatnya (past) setelah dia tiba. Should be: 'arrived' or 'had arrived'.",
+        t: "💡 After + Past/Past Perfect -> Simple Past.",
+        m: "⚠️ Menggunakan Present (arrives) dengan main verb Past (saw)."
+    },
+    { 
+        q: "The manager will sign the contract as soon as he will return from lunch.",
+        o: ["will sign", "as soon as", "will return", "No Error"],
+        c: 2,
+        e: "Double Future. Jangan pakai 'will' setelah 'as soon as'. Should be: 'returns'.",
+        t: "💡 As soon as + Present Simple.",
+        m: "⚠️ Menggunakan 'will' dua kali dalam kalimat majemuk."
+    },
+    { 
+        q: "Before she went to sleep, she calls her mother every night.",
+        o: ["Before she", "went", "calls", "No Error"],
+        c: 2,
+        e: "Tense consistency. 'Went' is past. 'Calls' is present. Should be: 'called' (Past Habit).",
+        t: "💡 Maintain tense consistency (Past with Past).",
+        m: "⚠️ Mencampur Past dan Present."
+    },
+    { 
+        q: "When I walked into the room, everyone is working silently.",
+        o: ["When I walked", "into the room", "is working", "No Error"],
+        c: 2,
+        e: "Tense mismatch. 'Walked' (Past) vs 'Is working' (Present). Should be: 'was working'.",
+        t: "💡 When + Past -> Main clause Past (Continuous).",
+        m: "⚠️ Lupa mengubah to be 'is' menjadi 'was'."
+    },
+    { 
+        q: "He had lived in New York for ten years before he moves to California.",
+        o: ["had lived", "for ten years", "moves", "No Error"],
+        c: 2,
+        e: "Tense sequence. Past Perfect (had lived) pasangannya Simple Past. Should be: 'moved'.",
+        t: "💡 Past Perfect + Before + Simple Past.",
+        m: "⚠️ Verb sequence error between Past Perfect and Present."
+    },
+    { 
+        q: "Once you will finish this report, please give it to me.",
+        o: ["Once you", "will finish", "please give", "No Error"],
+        c: 1,
+        e: "Future Time Clause. Setelah 'Once', jangan pakai 'will'. Should be: 'finish'.",
+        t: "💡 Once + Present Simple -> Imperative/Future.",
+        m: "⚠️ Menggunakan 'will' dalam klausa waktu."
+    },
+    { 
+        q: "The students took notes while the professor speaks about economics.",
+        o: ["took notes", "while", "speaks", "No Error"],
+        c: 2,
+        e: "Tense mismatch. Main clause past (took). Should be: 'spoke' or 'was speaking'.",
+        t: "💡 While usually followed by Continuous in the same timeframe.",
+        m: "⚠️ Present tense dalam konteks lampau."
+    },
+    { 
+        q: "I have seen him yesterday at the bus station.",
+        o: ["I have seen", "him", "yesterday", "No Error"],
+        c: 0,
+        e: "Time signal clash. 'Yesterday' tidak boleh pakai Present Perfect. Should be: 'I saw'.",
+        t: "💡 Specific past time (yesterday, last week) = Simple Past.",
+        m: "⚠️ 'Have seen' digunakan untuk waktu yang tidak spesifik."
+    },
+    { 
+        q: "By next year, they will built a new bridge here.",
+        o: ["By next year", "will built", "new bridge", "No Error"],
+        c: 1,
+        e: "Future Perfect form error. Rumus: Will + Have + V3. Should be: 'will have built'.",
+        t: "💡 By + Future Time -> Future Perfect.",
+        m: "⚠️ Hilang 'have' atau salah bentuk verb."
+    },
+    { 
+        q: "She starts to cry as soon as she heard the bad news.",
+        o: ["She starts", "to cry", "heard", "No Error"],
+        c: 0,
+        e: "Tense consistency. 'Heard' adalah past. Reaksi juga harus past. Should be: 'started'.",
+        t: "💡 Sequence of past events.",
+        m: "⚠️ Present (starts) vs Past (heard)."
+    },
+    { 
+        q: "Whenever he visited us, he brings flowers for my mother.",
+        o: ["Whenever", "visited", "brings", "No Error"],
+        c: 2,
+        e: "Habitual Past. Jika 'visited' (dulu), habit juga harus lampau. Should be: 'brought'.",
+        t: "💡 Past habit: Whenever + Past, + Past.",
+        m: "⚠️ Mixed tenses for habit."
+    },
+    { 
+        q: "We are sitting in the garden when it started to rain.",
+        o: ["We are sitting", "when it", "started", "No Error"],
+        c: 0,
+        e: "Tense mismatch. 'Started' (past). 'Are' (present). Should be: 'Were sitting'.",
+        t: "💡 Past Continuous interrupted by Past.",
+        m: "⚠️ Lupa mengubah to be ke bentuk lampau."
+    },
+    { 
+        q: "The package arrived after I leave the office for the day.",
+        o: ["arrived", "after", "leave", "No Error"],
+        c: 2,
+        e: "Past sequence. Saya pergi sebelum paket datang. Should be: 'had left' or 'left'.",
+        t: "💡 After + Past Perfect, + Simple Past.",
+        m: "⚠️ Menggunakan present (leave) dalam narasi lampau."
+    },
+    { 
+        q: "He will be tired when he will get home tonight.",
+        o: ["He will be", "when", "will get", "No Error"],
+        c: 2,
+        e: "Double Future. Time clause (when) pakai Present. Should be: 'gets'.",
+        t: "💡 When + S + V1 (future meaning).",
+        m: "⚠️ Will di kedua sisi kalimat."
+    },
+    { 
+        q: "Until you apologized, I will not speak to you.",
+        o: ["Until", "apologized", "will not speak", "No Error"],
+        c: 1,
+        e: "Tense mismatch. Main clause Future. Time clause harus Present. Should be: 'apologize'.",
+        t: "💡 Future Condition: Until + Present, + Future.",
+        m: "⚠️ Past tense dalam kondisi masa depan."
+    }
+];
+    /* ============================================================
+       BAGIAN 2: LOGIKA SISTEM (JANGAN DIEDIT KECUALI PAHAM)
+       ============================================================ */
+    
+    let currentQuestions = [];
+    let currentIdx = 0;
+    let score = 0;
+    let timer;
+    let timeLeft = TIME_LIMIT;
+    let answered = false;
+
+    function init() {
+        document.getElementById('display-topic').innerText = TOPIC_TITLE;
+        // Acak soal dan ambil sebanyak TOTAL_TO_SHOW
+        currentQuestions = pool.sort(() => 0.5 - Math.random()).slice(0, TOTAL_TO_SHOW);
+        startTimer();
+        showQuestion();
+    }
+
+    function startTimer() {
+        timer = setInterval(() => {
+            timeLeft--;
+            let m = Math.floor(timeLeft/60);
+            let s = timeLeft % 60;
+            document.getElementById('timer').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+            if(timeLeft <= 0) finish();
+        }, 1000);
+    }
+
+    function showQuestion() {
+        answered = false;
+        document.getElementById('next-btn').style.display = 'none';
+        document.getElementById('feedback-panel').style.display = 'none';
+        const q = currentQuestions[currentIdx];
+        
+        document.getElementById('progress-bar').style.width = (currentIdx / TOTAL_TO_SHOW * 100) + "%";
+        document.getElementById('q-text').innerText = `${currentIdx + 1}. ${q.q}`;
+        
+        const opts = document.getElementById('options');
+        opts.innerHTML = '';
+        q.o.forEach((o, i) => {
+            const b = document.createElement('button');
+            b.className = 'opt-btn';
+            b.innerText = o;
+            b.onclick = () => check(i, b);
+            opts.appendChild(b);
+        });
+    }
+
+    function check(idx, btn) {
+        if(answered) return;
+        answered = true;
+        const q = currentQuestions[currentIdx];
+        const all = document.querySelectorAll('.opt-btn');
+
+        if(idx === q.c) {
+            score++;
+            btn.classList.add('correct');
+            showFeedback("CORRECT", q.e);
+        } else {
+            btn.classList.add('wrong');
+            all[q.c].classList.add('correct');
+            showFeedback("INCORRECT", q.e);
+        }
+        document.getElementById('next-btn').style.display = 'block';
+    }
+
+    function showFeedback(status, text) {
+        const p = document.getElementById('feedback-panel');
+        document.getElementById('feedback-status').innerText = status;
+        document.getElementById('feedback-status').style.color = (status === "CORRECT") ? "var(--success)" : "var(--error)";
+        document.getElementById('feedback-desc').innerText = text;
+        p.style.display = 'block';
+    }
+
+    function goNext() {
+        currentIdx++;
+        if(currentIdx < TOTAL_TO_SHOW) showQuestion();
+        else finish();
+    }
+
+    function finish() {
+        clearInterval(timer);
+        document.getElementById('main-quiz').style.display = 'none';
+        document.getElementById('results').style.display = 'block';
+        document.getElementById('final-score').innerText = `${score}/${TOTAL_TO_SHOW}`;
+        
+        let msg = "";
+        let grade = "";
+        let percent = Math.round((score / TOTAL_TO_SHOW) * 100);
+
+        if(percent >= 85) { msg = "Excellent Work! Mastery Achieved."; grade = "A"; }
+        else if(percent >= 70) { msg = "Good Job! A bit more practice and you'll be perfect."; grade = "B"; }
+        else { msg = "Keep Practicing. Review the explanations to improve."; grade = "C"; }
+        
+        document.getElementById('rank-msg').innerText = msg;
+
+        setTimeout(() => {
+            if (typeof finishQuiz === "function") {
+                finishQuiz(percent, score, TOTAL_TO_SHOW, grade, msg, TOPIC_KEY);
+            }
+        }, 3000); 
+    }
+
+    init();
+</script>
+</body>
+</html>

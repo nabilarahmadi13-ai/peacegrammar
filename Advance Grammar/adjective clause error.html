@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise - Grammar Peace</title>
+    <style>
+        :root {
+            --bg-color: #0a0e14;
+            --card-bg: #161b22;
+            --text-main: #c9d1d9;
+            --accent: #58a6ff;
+            --success: #2ea043;
+            --error: #da3633;
+            --border: #30363d;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .top-nav {
+            width: 100%;
+            max-width: 750px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .btn-back {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+        }
+
+        .btn-back:hover { background: #30363d; border-color: var(--accent); }
+
+        #quiz-wrapper {
+            background: var(--card-bg);
+            max-width: 750px;
+            width: 100%;
+            padding: 35px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .header h1 { font-size: 1.4rem; color: var(--accent); margin: 0; text-transform: uppercase; }
+        #timer { font-family: monospace; font-size: 1.2rem; color: #ffa657; }
+
+        .progress-container { height: 4px; background: #21262d; margin-bottom: 25px; }
+        #progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
+
+        .question-box { margin-bottom: 30px; }
+        .question-text { font-size: 1.2rem; margin-bottom: 20px; line-height: 1.5; }
+
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+
+        .opt-btn {
+            background: #21262d;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 15px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+
+        .opt-btn:hover:not(:disabled) { background: #30363d; border-color: #8b949e; }
+        .opt-btn.correct { background: var(--success) !important; color: white; }
+        .opt-btn.wrong { background: var(--error) !important; color: white; }
+
+        #feedback-panel {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 6px;
+            background: #0d1117;
+            border-left: 4px solid var(--accent);
+            display: none;
+        }
+
+        .feedback-exp { font-size: 0.95rem; color: #8b949e; margin-top: 8px; }
+
+        .btn-nav {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            float: right;
+            margin-top: 20px;
+            display: none;
+        }
+
+        #results { display: none; text-align: center; }
+        .score-circle { font-size: 3rem; color: var(--accent); margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+<div class="top-nav">
+    <button class="btn-back" onclick="window.location.href='../index.html'">
+        🏠 Back to Levels
+    </button>
+</div>
+
+<div id="quiz-wrapper">
+    <div id="main-quiz">
+        <div class="header">
+            <h1 id="display-topic">TOPIC NAME</h1>
+            <div id="timer">05:00</div>
+        </div>
+
+        <div class="progress-container"><div id="progress-bar"></div></div>
+
+        <div class="question-box">
+            <div id="q-text" class="question-text">Identify the <b>ERROR</b> in the sentence below:</div>
+            <div id="q-sentence" class="question-text" style="font-style: italic; color: #ffa657;"></div>
+            <div id="options" class="options-grid"></div>
+        </div>
+
+        <div id="feedback-panel">
+            <div id="feedback-status" style="font-weight:bold"></div>
+            <div id="feedback-desc" class="feedback-exp"></div>
+        </div>
+
+        <button id="next-btn" class="btn-nav" onclick="goNext()">NEXT QUESTION</button>
+    </div>
+
+    <div id="results">
+        <h1>EXAM COMPLETE</h1>
+        <div class="score-circle" id="final-score">0/0</div>
+        <p id="rank-msg" style="margin-bottom: 20px;"></p>
+        <p style="color: var(--accent); font-size: 0.9rem;">Redirecting to Performance Report...</p>
+    </div>
+</div>
+
+<script src="../app.js"></script>
+
+<script>
+    const TOPIC_TITLE = "Adjective Clause (Error ID)"; 
+    const TOPIC_KEY = "adjective clause error"; 
+    const TIME_LIMIT = 600; 
+    const TOTAL_TO_SHOW = 20; 
+
+    const pool = [
+    { 
+        q: "The supervisor whom I was speaking to him about the schedule seemed very busy.",
+        o: ["whom", "speaking to", "him", "very busy"],
+        c: 2,
+        e: "Redundant Pronoun Error. 'Whom' sudah berfungsi sebagai objek, jadi tidak perlu lagi menambahkan 'him'.",
+        t: "💡 Jangan gunakan objek ganda dalam adjective clause.",
+        m: "⚠️ Hapus kata 'him'."
+    },
+    { 
+        q: "The ancient artifacts, that were found in the desert, are now on display at the museum.",
+        o: ["artifacts", "that", "found in", "on display"],
+        c: 1,
+        e: "Non-restrictive Clause Error. Kata 'that' tidak boleh digunakan dalam klausa yang berada di antara koma.",
+        t: "💡 Gunakan 'which' untuk info tambahan (non-restrictive).",
+        m: "⚠️ Ganti 'that' menjadi 'which'."
+    },
+    { 
+        q: "The company which its profits have doubled in one year is expanding its operations.",
+        o: ["which", "its profits", "doubled", "expanding"],
+        c: 0,
+        e: "Possessive Relative Pronoun Error. Untuk menunjukkan kepemilikan, gunakan 'whose'.",
+        t: "💡 Whose + Noun menggantikan 'which its' atau 'who its'.",
+        m: "⚠️ Ganti 'which its' menjadi 'whose'."
+    },
+    { 
+        q: "The scientists who is conducting the research have found a potential cure for the virus.",
+        o: ["who", "is conducting", "research", "have found"],
+        c: 1,
+        e: "Subject-Verb Agreement Error. 'Who' merujuk pada 'scientists' (plural), jadi kata kerjanya harus 'are conducting'.",
+        t: "💡 Cek apakah subjek utama plural atau singular.",
+        m: "⚠️ 'is conducting' harus menjadi 'are conducting'."
+    },
+    { 
+        q: "This is the document that I was looking for it all morning.",
+        o: ["document", "that", "looking for", "it"],
+        c: 3,
+        e: "Redundant Object. 'That' sudah mewakili 'document', sehingga 'it' di akhir klausa berlebihan.",
+        t: "💡 Pola: Noun + that + S + V + Preposition (tanpa objek lagi).",
+        m: "⚠️ Hapus kata 'it'."
+    },
+    { 
+        q: "The children all of who were playing in the park were wearing blue uniforms.",
+        o: ["all of who", "playing", "the park", "were wearing"],
+        c: 0,
+        e: "Prepositional Relative Pronoun Error. Setelah preposisi (of), gunakan 'whom' untuk orang.",
+        t: "💡 Quantifier + of + WHOM (bukan who).",
+        m: "⚠️ Ganti 'who' menjadi 'whom'."
+    },
+    { 
+        q: "The village where I grew up in is located at the foot of a high mountain.",
+        o: ["where", "grew up", "in", "located at"],
+        c: 2,
+        e: "Relative Adverb/Preposition Redundancy. 'Where' sudah berarti 'in which'. Jangan tambahkan 'in' lagi.",
+        t: "💡 Pilih salah satu: 'where I grew up' ATAU 'which I grew up IN'.",
+        m: "⚠️ Hapus 'in' atau ganti 'where' menjadi 'which'."
+    },
+    { 
+        q: "The engineer who's design was chosen for the bridge received a prestigious award.",
+        o: ["who's", "chosen", "for", "received"],
+        c: 0,
+        e: "Homophone Error. 'Who's' berarti 'who is', sedangkan yang dibutuhkan adalah kata ganti kepemilikan 'whose'.",
+        t: "💡 Who's = Who is. Whose = Milik siapa.",
+        m: "⚠️ Ganti 'who's' menjadi 'whose'."
+    },
+    { 
+        q: "Most of the students which attended the seminar were from the engineering department.",
+        o: ["Most of", "which", "attended", "were from"],
+        c: 1,
+        e: "Relative Pronoun Choice. 'Which' digunakan untuk benda, sedangkan 'students' adalah orang.",
+        t: "💡 Who/That untuk orang, Which/That untuk benda.",
+        m: "⚠️ Ganti 'which' menjadi 'who' atau 'that'."
+    },
+    { 
+        q: "The cars making in that factory are exported to several countries in Europe.",
+        o: ["cars", "making", "exported", "several"],
+        c: 1,
+        e: "Reduced Adjective Clause Error. Mobil 'dibuat' (pasif), jadi harus menggunakan V-3 (made).",
+        t: "💡 Reduced Passive: Noun + V3. Reduced Active: Noun + Ving.",
+        m: "⚠️ Ganti 'making' menjadi 'made'."
+    },
+    { 
+        q: "The professor, whom everyone respects him, will retire at the end of this semester.",
+        o: ["whom", "respects", "him", "at the end"],
+        c: 2,
+        e: "Redundant Pronoun. 'Whom' sudah menjadi objek dari 'respects'.",
+        t: "💡 Jangan tambahkan objek personal (him/her/it/them) di dalam adjective clause.",
+        m: "⚠️ Hapus kata 'him'."
+    },
+    { 
+        q: "The year which the treaty was signed marked the beginning of a new era.",
+        o: ["year", "which", "the treaty", "marked"],
+        c: 1,
+        e: "Missing Preposition/Relative Adverb. 'Year' adalah waktu, butuh 'when' atau 'in which'.",
+        t: "💡 Time Noun + when / in which.",
+        m: "⚠️ Ganti 'which' menjadi 'when'."
+    },
+    { 
+        q: "I met a woman whose her daughter is a world-famous concert violinist.",
+        o: ["met", "whose", "her", "concert violinist"],
+        c: 2,
+        e: "Double Possessive Error. 'Whose' sudah menunjukkan kepemilikan, tidak perlu 'her' lagi.",
+        t: "💡 Whose + Noun (tanpa kata ganti kepemilikan lagi).",
+        m: "⚠️ Hapus kata 'her'."
+    },
+    { 
+        q: "The hotel where we stayed at last summer was very comfortable and affordable.",
+        o: ["where", "stayed", "at", "comfortable"],
+        c: 2,
+        e: "Preposition Redundancy. 'Where' sudah mencakup preposisi tempat.",
+        t: "💡 Where = At which / In which. Jangan gunakan 'where' bersamaan dengan preposisi di akhir.",
+        m: "⚠️ Hapus kata 'at'."
+    },
+    { 
+        q: "The researchers conducting the experiment they found some unexpected results.",
+        o: ["researchers", "conducting", "they", "unexpected"],
+        c: 2,
+        e: "Extra Subject Error. 'The researchers' adalah subjek utama, 'they' tidak diperlukan lagi.",
+        t: "💡 Kalimat utama tidak boleh memiliki dua subjek untuk satu verb.",
+        m: "⚠️ Hapus kata 'they'."
+    },
+    { 
+        q: "The project in that I am currently involved requires a lot of concentration.",
+        o: ["in that", "currently", "involved", "requires"],
+        c: 0,
+        e: "Preposition + That Error. 'That' tidak pernah boleh diletakkan langsung setelah preposisi.",
+        t: "💡 Gunakan 'in which' atau pindahkan preposisi ke akhir.",
+        m: "⚠️ Ganti 'in that' menjadi 'in which'."
+    },
+    { 
+        q: "The man was standing by the window is my biology professor.",
+        o: ["The man", "was standing", "by the window", "professor"],
+        c: 1,
+        e: "Missing Relative Pronoun. Kalimat ini butuh 'who' agar menjadi adjective clause.",
+        t: "💡 Jika ada dua verb (was standing & is), salah satunya harus berada dalam klausa.",
+        m: "⚠️ Ganti 'was standing' menjadi 'standing' atau 'who was standing'."
+    },
+    { 
+        q: "The book which its cover is torn belongs to the library.",
+        o: ["which", "its cover", "torn", "belongs to"],
+        c: 0,
+        e: "Possessive Error. 'Which its' tidak baku dalam bahasa Inggris.",
+        t: "💡 Gunakan 'whose' untuk kepemilikan benda maupun orang.",
+        m: "⚠️ Ganti 'which its' menjadi 'whose'."
+    },
+    { 
+        q: "The apples growing on those trees they are not yet ripe enough to eat.",
+        o: ["growing", "those trees", "they", "ripe enough"],
+        c: 2,
+        e: "Redundant Subject. 'The apples' adalah subjek, 'they' adalah pengulangan yang salah.",
+        t: "💡 Adjective clause (growing on those trees) hanya menjelaskan subjek, tidak menggantikannya.",
+        m: "⚠️ Hapus kata 'they'."
+    },
+    { 
+        q: "The reason which I was late for the meeting was because of the heavy rain.",
+        o: ["reason", "which", "late for", "because of"],
+        c: 1,
+        e: "Relative Adverb Error. Kata 'reason' harus diikuti 'why' atau 'for which'.",
+        t: "💡 Reason + why.",
+        m: "⚠️ Ganti 'which' menjadi 'why'."
+    }
+];
+
+    let currentQuestions = [];
+    let currentIdx = 0;
+    let score = 0;
+    let timer;
+    let timeLeft = TIME_LIMIT;
+    let answered = false;
+
+    function init() {
+        document.getElementById('display-topic').innerText = TOPIC_TITLE;
+        currentQuestions = pool.sort(() => 0.5 - Math.random()).slice(0, TOTAL_TO_SHOW);
+        startTimer();
+        showQuestion();
+    }
+
+    function startTimer() {
+        timer = setInterval(() => {
+            timeLeft--;
+            let m = Math.floor(timeLeft/60);
+            let s = timeLeft % 60;
+            document.getElementById('timer').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+            if(timeLeft <= 0) finish();
+        }, 1000);
+    }
+
+    function showQuestion() {
+        answered = false;
+        document.getElementById('next-btn').style.display = 'none';
+        document.getElementById('feedback-panel').style.display = 'none';
+        const q = currentQuestions[currentIdx];
+        
+        document.getElementById('progress-bar').style.width = (currentIdx / TOTAL_TO_SHOW * 100) + "%";
+        document.getElementById('q-sentence').innerText = q.q;
+        
+        const opts = document.getElementById('options');
+        opts.innerHTML = '';
+        q.o.forEach((o, i) => {
+            const b = document.createElement('button');
+            b.className = 'opt-btn';
+            b.innerText = o;
+            b.onclick = () => check(i, b);
+            opts.appendChild(b);
+        });
+    }
+
+    function check(idx, btn) {
+        if(answered) return;
+        answered = true;
+        const q = currentQuestions[currentIdx];
+        const all = document.querySelectorAll('.opt-btn');
+
+        if(idx === q.c) {
+            score++;
+            btn.classList.add('correct');
+            showFeedback("CORRECT", q.e, q.t, q.m);
+        } else {
+            btn.classList.add('wrong');
+            all[q.c].classList.add('correct');
+            showFeedback("INCORRECT", q.e, q.t, q.m);
+        }
+        document.getElementById('next-btn').style.display = 'block';
+    }
+
+    function showFeedback(status, text, tip, misc) {
+        const p = document.getElementById('feedback-panel');
+        document.getElementById('feedback-status').innerText = status;
+        document.getElementById('feedback-status').style.color = (status === "CORRECT") ? "var(--success)" : "var(--error)";
+        document.getElementById('feedback-desc').innerHTML = `${text}<br><br><span style="color:#58a6ff">${tip}</span><br><span style="color:#ffa657">${misc}</span>`;
+        p.style.display = 'block';
+    }
+
+    function goNext() {
+        currentIdx++;
+        if(currentIdx < TOTAL_TO_SHOW) showQuestion();
+        else finish();
+    }
+
+    function finish() {
+        clearInterval(timer);
+        document.getElementById('main-quiz').style.display = 'none';
+        document.getElementById('results').style.display = 'block';
+        document.getElementById('final-score').innerText = `${score}/${TOTAL_TO_SHOW}`;
+        let msg = "";
+        let grade = "";
+        let percent = Math.round((score / TOTAL_TO_SHOW) * 100);
+
+        if(percent >= 85) { msg = "Excellent Work! Mastery Achieved."; grade = "A"; }
+        else if(percent >= 70) { msg = "Good Job! A bit more practice and you'll be perfect."; grade = "B"; }
+        else { msg = "Keep Practicing. Review the explanations to improve."; grade = "C"; }
+        
+        document.getElementById('rank-msg').innerText = msg;
+
+        setTimeout(() => {
+            if (typeof finishQuiz === "function") {
+                finishQuiz(percent, score, TOTAL_TO_SHOW, grade, msg, TOPIC_KEY);
+            }
+        }, 3000); 
+    }
+
+    init();
+</script>
+</body>
+</html>

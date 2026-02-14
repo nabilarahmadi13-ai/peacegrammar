@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise - Grammar Peace</title>
+    <style>
+        :root {
+            --bg-color: #0a0e14;
+            --card-bg: #161b22;
+            --text-main: #c9d1d9;
+            --accent: #58a6ff;
+            --success: #2ea043;
+            --error: #da3633;
+            --border: #30363d;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .top-nav {
+            width: 100%;
+            max-width: 750px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .btn-back {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+        }
+
+        .btn-back:hover { background: #30363d; border-color: var(--accent); }
+
+        #quiz-wrapper {
+            background: var(--card-bg);
+            max-width: 750px;
+            width: 100%;
+            padding: 35px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .header h1 { font-size: 1.4rem; color: var(--accent); margin: 0; text-transform: uppercase; }
+        #timer { font-family: monospace; font-size: 1.2rem; color: #ffa657; }
+
+        .progress-container { height: 4px; background: #21262d; margin-bottom: 25px; }
+        #progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
+
+        .question-box { margin-bottom: 30px; }
+        .question-text { font-size: 1.2rem; margin-bottom: 20px; line-height: 1.5; }
+
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+
+        .opt-btn {
+            background: #21262d;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 15px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+
+        .opt-btn:hover:not(:disabled) { background: #30363d; border-color: #8b949e; }
+        .opt-btn.correct { background: var(--success) !important; color: white; }
+        .opt-btn.wrong { background: var(--error) !important; color: white; }
+
+        #feedback-panel {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 6px;
+            background: #0d1117;
+            border-left: 4px solid var(--accent);
+            display: none;
+        }
+
+        .feedback-exp { font-size: 0.95rem; color: #8b949e; margin-top: 8px; }
+
+        .btn-nav {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            float: right;
+            margin-top: 20px;
+            display: none;
+        }
+
+        #results { display: none; text-align: center; }
+        .score-circle { font-size: 3rem; color: var(--accent); margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+<div class="top-nav">
+    <button class="btn-back" onclick="window.location.href='../index.html'">
+        🏠 Back to Levels
+    </button>
+</div>
+
+<div id="quiz-wrapper">
+    <div id="main-quiz">
+        <div class="header">
+            <!-- EDIT DI SINI: JUDUL TOPIK -->
+            <h1 id="display-topic">TOPIC NAME</h1>
+            <div id="timer">05:00</div>
+        </div>
+
+        <div class="progress-container"><div id="progress-bar"></div></div>
+
+        <div class="question-box">
+            <div id="q-text" class="question-text"></div>
+            <div id="options" class="options-grid"></div>
+        </div>
+
+        <div id="feedback-panel">
+            <div id="feedback-status" style="font-weight:bold"></div>
+            <div id="feedback-desc" class="feedback-exp"></div>
+        </div>
+
+        <button id="next-btn" class="btn-nav" onclick="goNext()">NEXT QUESTION</button>
+    </div>
+
+    <div id="results">
+        <h1>EXAM COMPLETE</h1>
+        <div class="score-circle" id="final-score">0/0</div>
+        <p id="rank-msg" style="margin-bottom: 20px;"></p>
+        <p style="color: var(--accent); font-size: 0.9rem;">Redirecting to Performance Report...</p>
+    </div>
+</div>
+
+<script src="../app.js"></script>
+
+<script>
+    /* ============================================================
+       BAGIAN 1: KONFIGURASI SOAL (EDIT DI SINI)
+       ============================================================ */
+    
+    const TOPIC_TITLE = "Mastering Sentence"; // Ganti Judul
+    const TOPIC_KEY = "sentence fill"; // HARUS SAMA dengan nama di TOPICS app.js
+    const TIME_LIMIT = 300; // Dalam detik (300 = 5 menit)
+    const TOTAL_TO_SHOW = 20; // Jumlah soal yang ditampilkan (misal dari 20 soal, ambil 10 acak)
+const pool = [
+    { 
+        q: "'She is a teacher' is a _______ sentence.", 
+        o: ["Verbal", "Nominal", "Imperative", "Interrogative"], 
+        c: 1, 
+        e: "It uses 'is' (to be) + noun/adjective, making it a nominal sentence.",
+        t: "💡 Nominal sentence = uses BE (am/is/are/was/were) as main verb + noun/adjective.",
+        m: "⚠️ Students confuse nominal with verbal when they see any verb."
+    },
+    { 
+        q: "'They play football every Sunday' is a _______ sentence.", 
+        o: ["Nominal", "Verbal", "Passive", "Conditional"], 
+        c: 1, 
+        e: "It uses an action verb 'play', making it a verbal sentence.",
+        t: "💡 Verbal sentence = uses action/ordinary verb (not BE as main verb).",
+        m: "⚠️ Don't confuse helping verbs (is playing) with main verb BE."
+    },
+    { 
+        q: "Which is a nominal sentence?", 
+        o: ["He runs fast", "She was happy", "They studied hard", "We eat breakfast"], 
+        c: 1, 
+        e: "'She was happy' uses 'was' (BE) as main verb + adjective.",
+        t: "💡 Look for BE (am/is/are/was/were) + noun/adjective/adverb of place.",
+        m: "⚠️ 'Was' can be helping verb (was running) or main verb (was happy)."
+    },
+    { 
+        q: "'The book is on the table' is _______", 
+        o: ["Verbal", "Nominal", "Neither", "Both"], 
+        c: 1, 
+        e: "'Is' is the main verb + prepositional phrase (adverb of place) = nominal.",
+        t: "💡 BE + prepositional phrase of place = nominal sentence.",
+        m: "⚠️ Many think any sentence with a preposition is verbal."
+    },
+    { 
+        q: "Complete with correct form: 'My father _______ a doctor.'", 
+        o: ["is", "does", "works", "has"], 
+        c: 0, 
+        e: "Nominal sentence needs BE verb. 'My father is a doctor.'",
+        t: "💡 Profession after subject = use BE (is/am/are).",
+        m: "⚠️ Don't use action verbs for professions with articles (a/an)."
+    },
+    { 
+        q: "'We were in the library yesterday' is _______", 
+        o: ["Verbal sentence", "Nominal sentence", "Question", "Command"], 
+        c: 1, 
+        e: "'Were' (BE) is main verb + adverb of place = nominal.",
+        t: "💡 BE + place/time = nominal sentence.",
+        m: "⚠️ Don't think past tense automatically means verbal."
+    },
+    { 
+        q: "Which needs 'do/does' to make negative?", 
+        o: ["She is kind", "He was here", "They like pizza", "I am tired"], 
+        c: 2, 
+        e: "'They like pizza' is verbal, so negative uses 'don't': 'They don't like pizza.'",
+        t: "💡 Verbal sentences need do/does/did for negative and questions.",
+        m: "⚠️ Nominal sentences just add 'not' after BE."
+    },
+    { 
+        q: "'The students are studying' is _______", 
+        o: ["Nominal", "Verbal", "Both", "Neither"], 
+        c: 1, 
+        e: "'Are' is auxiliary/helping verb, 'studying' is the main verb = verbal sentence.",
+        t: "💡 BE + -ing = verbal sentence (continuous tense). BE is not the main verb here.",
+        m: "⚠️ Don't confuse BE as auxiliary (helping) with BE as main verb."
+    },
+    { 
+        q: "Make nominal: 'My brother _______ an engineer.'", 
+        o: ["works", "is", "does", "becomes"], 
+        c: 1, 
+        e: "Nominal needs BE: 'My brother is an engineer.'",
+        t: "💡 BE + profession/identity = nominal.",
+        m: "⚠️ 'Becomes' shows change, 'is' shows state/identity."
+    },
+    { 
+        q: "'I am from Indonesia' is _______", 
+        o: ["Verbal", "Nominal", "Imperative", "Passive"], 
+        c: 1, 
+        e: "'Am' (BE) is main verb + origin = nominal sentence.",
+        t: "💡 BE + from/in (origin/location) = nominal.",
+        m: "⚠️ Origin and location use BE, not action verbs."
+    },
+    { 
+        q: "Which is verbal?", 
+        o: ["They are friends", "She sleeps late", "We were ready", "It is cold"], 
+        c: 1, 
+        e: "'She sleeps late' uses action verb 'sleeps' = verbal.",
+        t: "💡 Look for action verbs: run, eat, sleep, work, study, etc.",
+        m: "⚠️ All others use BE as main verb (nominal)."
+    },
+    { 
+        q: "'The flowers smell wonderful' is _______", 
+        o: ["Nominal", "Verbal", "Passive", "Conditional"], 
+        c: 1, 
+        e: "'Smell' is a verb (even though linking), it's still verbal sentence structure.",
+        t: "💡 Linking verbs (seem, appear, smell, taste) = verbal sentences.",
+        m: "⚠️ Linking verbs are NOT the same as BE - they're still verbal."
+    },
+    { 
+        q: "Negative of 'He is smart': _______", 
+        o: ["He doesn't smart", "He isn't smart", "He don't smart", "He not smart"], 
+        c: 1, 
+        e: "Nominal sentence: add 'not' after BE = 'He isn't smart' or 'He is not smart'.",
+        t: "💡 Nominal negative: BE + not.",
+        m: "⚠️ NEVER use 'doesn't' with BE verbs."
+    },
+    { 
+        q: "Negative of 'She likes ice cream': _______", 
+        o: ["She isn't like ice cream", "She doesn't like ice cream", "She not likes ice cream", "She don't like ice cream"], 
+        c: 1, 
+        e: "Verbal sentence with 'likes' needs 'doesn't' + base verb.",
+        t: "💡 Verbal negative: subject + don't/doesn't/didn't + base verb.",
+        m: "⚠️ Remove -s/-es when using doesn't."
+    },
+    { 
+        q: "'My house is big and beautiful' is _______", 
+        o: ["Verbal", "Nominal", "Complex", "Compound verbal"], 
+        c: 1, 
+        e: "'Is' (BE) + adjectives = nominal sentence.",
+        t: "💡 BE + adjective(s) = always nominal.",
+        m: "⚠️ Compound adjectives don't change sentence type."
+    },
+    { 
+        q: "Question form of 'You are busy': _______", 
+        o: ["Do you busy?", "Are you busy?", "Is you busy?", "Does you busy?"], 
+        c: 1, 
+        e: "Nominal question: invert BE and subject = 'Are you busy?'",
+        t: "💡 Nominal question: BE + subject + ...?",
+        m: "⚠️ Don't use do/does with BE verbs."
+    },
+    { 
+        q: "Question form of 'They work here': _______", 
+        o: ["Are they work here?", "They work here?", "Do they work here?", "Does they work here?"], 
+        c: 2, 
+        e: "Verbal question needs do/does/did: 'Do they work here?'",
+        t: "💡 Verbal question: Do/Does/Did + subject + base verb?",
+        m: "⚠️ 'They' is plural = use 'do' not 'does'."
+    },
+    { 
+        q: "'There is a cat in the garden' is _______", 
+        o: ["Verbal", "Nominal", "Passive", "Imperative"], 
+        c: 1, 
+        e: "'Is' (BE) is main verb in 'there is/are' structure = nominal.",
+        t: "💡 There is/are/was/were = nominal sentences.",
+        m: "⚠️ 'There is/are' is a special nominal pattern."
+    },
+    { 
+        q: "'She became a doctor' is _______", 
+        o: ["Nominal", "Verbal", "Passive", "Perfect"], 
+        c: 1, 
+        e: "'Became' is a linking verb but NOT BE, so it's verbal.",
+        t: "💡 Only BE verbs (am/is/are/was/were) make nominal sentences.",
+        m: "⚠️ Become/seem/appear are linking verbs but create verbal sentences."
+    },
+    { 
+        q: "'I have three brothers' is _______", 
+        o: ["Nominal with BE", "Verbal with have", "Nominal with have", "Perfect tense"], 
+        c: 1, 
+        e: "'Have' is an ordinary verb (possession) = verbal sentence.",
+        t: "💡 Have/has = verbal (ordinary verb), not BE.",
+        m: "⚠️ 'Have' can be auxiliary (have done) or main verb (have a car)."
+    }
+];
+
+    /* ============================================================
+       BAGIAN 2: LOGIKA SISTEM (JANGAN DIEDIT KECUALI PAHAM)
+       ============================================================ */
+    
+    let currentQuestions = [];
+    let currentIdx = 0;
+    let score = 0;
+    let timer;
+    let timeLeft = TIME_LIMIT;
+    let answered = false;
+
+    function init() {
+        document.getElementById('display-topic').innerText = TOPIC_TITLE;
+        // Acak soal dan ambil sebanyak TOTAL_TO_SHOW
+        currentQuestions = pool.sort(() => 0.5 - Math.random()).slice(0, TOTAL_TO_SHOW);
+        startTimer();
+        showQuestion();
+    }
+
+    function startTimer() {
+        timer = setInterval(() => {
+            timeLeft--;
+            let m = Math.floor(timeLeft/60);
+            let s = timeLeft % 60;
+            document.getElementById('timer').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+            if(timeLeft <= 0) finish();
+        }, 1000);
+    }
+
+    function showQuestion() {
+        answered = false;
+        document.getElementById('next-btn').style.display = 'none';
+        document.getElementById('feedback-panel').style.display = 'none';
+        const q = currentQuestions[currentIdx];
+        
+        document.getElementById('progress-bar').style.width = (currentIdx / TOTAL_TO_SHOW * 100) + "%";
+        document.getElementById('q-text').innerText = `${currentIdx + 1}. ${q.q}`;
+        
+        const opts = document.getElementById('options');
+        opts.innerHTML = '';
+        q.o.forEach((o, i) => {
+            const b = document.createElement('button');
+            b.className = 'opt-btn';
+            b.innerText = o;
+            b.onclick = () => check(i, b);
+            opts.appendChild(b);
+        });
+    }
+
+    function check(idx, btn) {
+        if(answered) return;
+        answered = true;
+        const q = currentQuestions[currentIdx];
+        const all = document.querySelectorAll('.opt-btn');
+
+        if(idx === q.c) {
+            score++;
+            btn.classList.add('correct');
+            showFeedback("CORRECT", q.e);
+        } else {
+            btn.classList.add('wrong');
+            all[q.c].classList.add('correct');
+            showFeedback("INCORRECT", q.e);
+        }
+        document.getElementById('next-btn').style.display = 'block';
+    }
+
+    function showFeedback(status, text) {
+        const p = document.getElementById('feedback-panel');
+        document.getElementById('feedback-status').innerText = status;
+        document.getElementById('feedback-status').style.color = (status === "CORRECT") ? "var(--success)" : "var(--error)";
+        document.getElementById('feedback-desc').innerText = text;
+        p.style.display = 'block';
+    }
+
+    function goNext() {
+        currentIdx++;
+        if(currentIdx < TOTAL_TO_SHOW) showQuestion();
+        else finish();
+    }
+
+    function finish() {
+        clearInterval(timer);
+        document.getElementById('main-quiz').style.display = 'none';
+        document.getElementById('results').style.display = 'block';
+        document.getElementById('final-score').innerText = `${score}/${TOTAL_TO_SHOW}`;
+        
+        let msg = "";
+        let grade = "";
+        let percent = Math.round((score / TOTAL_TO_SHOW) * 100);
+
+        if(percent >= 85) { msg = "Excellent Work! Mastery Achieved."; grade = "A"; }
+        else if(percent >= 70) { msg = "Good Job! A bit more practice and you'll be perfect."; grade = "B"; }
+        else { msg = "Keep Practicing. Review the explanations to improve."; grade = "C"; }
+        
+        document.getElementById('rank-msg').innerText = msg;
+
+        setTimeout(() => {
+            if (typeof finishQuiz === "function") {
+                finishQuiz(percent, score, TOTAL_TO_SHOW, grade, msg, TOPIC_KEY);
+            }
+        }, 3000); 
+    }
+
+    init();
+</script>
+</body>
+</html>
