@@ -1,11 +1,11 @@
 const CACHE_NAME = "grammar-peace-v1";
 const urlsToCache = [
-  "/",
-  "/index.html",
-  "/manifest.json",
-  "/round_logo.png",
-  "/logo.png",
-  "/app.js"
+  "/peacegrammar/",
+  "/peacegrammar/index.html",
+  "/peacegrammar/manifest.json",
+  "/peacegrammar/round_logo.png",
+  "/peacegrammar/logo.png",
+  "/peacegrammar/app.js"
 ];
 
 // Install
